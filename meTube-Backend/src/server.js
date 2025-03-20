@@ -1,12 +1,28 @@
 import http from 'http'
 import { app } from './index.js';
 import { connectDB } from './db/index.js';
+import { Server } from 'socket.io';
 
-const server = http.createServer(app);
+const port = process.env.PORT || 8000;
 
-console.log("ENV variables :", process.env);
+const server = http.createServer(app); // needed for socket connection.... 
+
+// console.log("ENV variables :", process.env);
+
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ["GET", "POST"]
+    }
+});
+
+io.on('connection', (socket) => {
+    // needs client running with socket config done....
+    console.log("Established connection✅");
+
+})
 
 
-server.listen(process.env.PORT, () => {
+app.listen(port, () => {
     connectDB();
 })

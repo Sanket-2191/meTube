@@ -19,9 +19,12 @@
   },
   "homepage": "https://github.com/Sanket-2191/meTube#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.12.1"
+    "mongoose": "^8.12.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9",
