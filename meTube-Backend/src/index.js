@@ -23,7 +23,7 @@ app.use(express.urlencoded({
 }))
 
 // easily serve static files like favicon, images, pages......
-app.use(express.static('public'))
+app.use(express.static('../public'))
 
 app.use(cookieParser());
 
