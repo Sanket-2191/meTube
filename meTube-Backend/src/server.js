@@ -17,12 +17,14 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-    // needs client running with socket config done....
+    // needs client running with socket config i.e html page....
     console.log("Established connection✅");
 
 })
 
 
 app.listen(port, () => {
+    console.log("app is running 🏃‍♀️ 🏃‍♀️");
+
     connectDB();
 })
