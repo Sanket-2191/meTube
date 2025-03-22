@@ -5,6 +5,32 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ErrorHandler } from "../utils/ErrorHandlers.js";
 
 
+const generate_Access_And_Refresh_Token = async (userID) => {
+
+    try {
+        const user = await userModel.findById({ _id: userID });
+        // can also be written as userModel.findById(userID)
+
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+
+        await user.save({ validateBeforeSave: false }); // got error because of validation checks in mongoose
+        /*
+            whenever we save mongoose object all validations (like password checks, username check) 
+            also gets triggered, since we are not providing them here, by using { validateBeforeSave: false },
+            we can save any field without worrying about those validations.
+        */
+
+        return { accessToken, refreshToken };
+
+    } catch (error) {
+        throw new ErrorHandler(500, "Error while generating Access token")
+    }
+
+}
+
 const registerUser = asyncHandler(async (req, res) => {
     // get user detail from frontend
     const { fullname, email, username, password } = req.body;
@@ -57,6 +83,83 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 })
 
+const loginUser = asyncHandler(async (req, res) => {
+    // data from req.body
+    const { email, password, username } = req.body;
+    // check credentials for login
+    console.log("login req.body: ", req.body);
 
+    if (!username && !email) throw new ErrorHandler(400, "Username or email needed!");
 
-export { registerUser }
+    // find the user
+    const user = await userModel.findOne({
+        $or: [{ email }, { username }]
+    })
+    if (!user) throw new ErrorHandler(400, "Cannot find user, please complete registration!");
+    // check password
+    const isPasswordValid = await user.isPasswordCorrect(password || "");
+    if (!isPasswordValid) throw new ErrorHandler(400, "Invalid password entered!");
+    // generate access and refresh tokens..
+    const { accessToken, refreshToken } = await generate_Access_And_Refresh_Token(user._id)
+    // send tokens with cookie
+    const loggedInUser = await userModel.findById(user._id).select("-password -refreshToken");
+
+    const cookieOptions = {
+        httpOnly: true,
+        sercure: true
+    }
+    return res.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(
+            new APIresponse(200,
+                {
+                    user: loggedInUser,
+                    accessToken,
+                    refreshToken
+                }
+                , `${loggedInUser.username} logged in successfully✅✅`)
+        )
+})
+
+export const logoutUser = asyncHandler(async (req, res) => {
+    // get userId from req.user set in auth midware
+    try {
+        const user = await userModel.findByIdAndUpdate(req.user._id,
+            {
+                $set: {
+                    refreshToken: undefined
+                }
+            },
+            {
+                new: true
+            }
+        );
+
+        const cookieOptions = {
+            httpOnly: true,
+            sercure: true
+        }
+
+        return res.status(200)
+            .clearCookie("accessToken", cookieOptions)
+            .clearCookie("refreshToken", cookieOptions)
+            .json(
+                new APIresponse(200,
+                    {},
+                    "User loggedout😥"
+                )
+            )
+
+        // user.refreshToken = null;
+
+        // user.save({ validateBeforeSave: false }); // not a good way
+
+        // req.cookies = {}; // not a good way
+    } catch (error) {
+
+    }
+
+})
+
+export { registerUser, loginUser }

@@ -20,7 +20,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     } catch (error) {
         throw new ErrorHandler(500, "File upload failed");
     } finally {
-        console.log("removed local file after creationod URL");
+        console.log("removed local file after creation of URL");
         // to remove the locally saved temp file from multer as upload operation failed
         fs.unlinkSync(localFilePath)
     }
