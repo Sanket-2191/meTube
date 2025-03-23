@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+
 import { userModel } from "../models/user.model.js";
 import { APIresponse } from "../utils/APIresponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -138,7 +140,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
         const cookieOptions = {
             httpOnly: true,
-            sercure: true
+            secure: true,
+            sameSite: "Strict"
         }
 
         return res.status(200)
@@ -157,9 +160,63 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
         // req.cookies = {}; // not a good way
     } catch (error) {
-
+        throw new ErrorHandler(500, "Unable to logout")
     }
 
 })
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+    // get refreshToken from req object...
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    // check if token is present
+    if (!incomingRefreshToken) throw new ErrorHandler(401, "Unauthorized Access!");
+
+    try {
+        // decode the data contained with token..
+        const tokenPayload = jwt.verify(  // this give _id of user.
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+        // @ts-ignore
+        // use token data to get the required user.
+        const user = await userModel.findById(tokenPayload._id);
+
+        // check if refreshtoken had an id error if refreshToken is expired, (we wont user as no Id)
+        if (!user) throw new ErrorHandler(401, "Invalid refreshToken!");
+
+        // check if expired refresh token is being used....
+        if (incomingRefreshToken !== user.refreshToken) {
+            throw new ErrorHandler(401, "refreshToken is Expired please login again!");
+        }
+
+        // gererate new set of tokens, below method will update refreshtoken in DB.
+        const { newAccessToken, newRefreshToken } = await generate_Access_And_Refresh_Token(user._id)
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict"
+        }
+
+        return res.status(200)
+            .cookie("accessToken", newAccessToken, cookieOptions)
+            .cookie("refreshToken", newRefreshToken, cookieOptions)
+            .json(
+                new APIresponse(
+                    200,
+                    {
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken
+
+                    },
+                    "User LoggedIn again"
+                )
+            )
+    } catch (error) {
+        throw new ErrorHandler(500, "Unable to get access tokens please login again");
+    }
+
+})
+
+
 
 export { registerUser, loginUser }

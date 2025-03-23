@@ -13,7 +13,7 @@ export const connectDB = async () => {
 
 
     } catch (error) {
-        console.log("OPSS Something went wrong 🤕 :", error);
+        console.log("Unable to connect to DB🤕 :", error);
         process.exit(1);
 
     }
