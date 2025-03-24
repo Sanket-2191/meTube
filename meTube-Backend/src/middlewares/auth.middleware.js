@@ -9,7 +9,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
     // req.header("Authorization") used for mobile apps as they cant use cookies well.
 
-    if (!token) throw new ErrorHandler(401, "Unauthorized request!")
+    if (!token) throw new ErrorHandler(401, "Unauthorized request!");
 
     try {
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);

@@ -54,7 +54,5 @@ app.get('/', (req, res) => {
 
 import { userRouter } from './routes/user.routes.js';
 
-
-// routes declaration...
-
-app.use('/api/v1/users', userRouter)
+// user end-points
+app.use('/api/v1/users', userRouter);

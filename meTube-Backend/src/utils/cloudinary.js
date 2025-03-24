@@ -18,6 +18,8 @@ const uploadOnCloudinary = async (localFilePath) => {
         return response;
 
     } catch (error) {
+
+        console.log("removed local file after failing to create URL");
         throw new ErrorHandler(500, "File upload failed");
     } finally {
         console.log("removed local file after creation of URL");

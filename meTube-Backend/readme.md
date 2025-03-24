@@ -1,9 +1,24 @@
 
-
-
 ## IMP notes in [./src/middlewares/multer.middleware.js]
 
 ### indices are used to optimize searching, based on indexed feild. Indexing is a heavy operation.
+
+```js
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({
+        success: err.success || false,
+        message: err.message || "Internal Server Error",
+        errors: err.errors || [],
+    });
+});
+
+``` 
+express handles error like such, to avoid generic messages we have our **ErrorHandler** class and we throw its instances to our **asynHandler** class which uses
+```js 
+    Promise.catch(err=>next(err)) 
+``` 
+to send **err** object to the in-built *Express error-handling middleware* mentioned above..
 
 # 22-03-2025
 

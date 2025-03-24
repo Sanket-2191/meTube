@@ -2,7 +2,6 @@ import multer from "multer";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-
         // console.log("Files received in multer midware:?", req.files || "files not received");
         cb(null, 'public/temp/my-uploads')
         /*
