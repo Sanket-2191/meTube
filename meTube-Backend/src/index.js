@@ -34,8 +34,6 @@ export const app = express();
     */
     app.use(cookieParser());
 
-
-
     dotenv.config(
         {
             path: '../env'

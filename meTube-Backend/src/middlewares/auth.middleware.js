@@ -11,19 +11,18 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
     if (!token) throw new ErrorHandler(401, "Unauthorized request!");
 
-    try {
-        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        // @ts-ignore
-        if (!decodedToken._id) throw new ErrorHandler(401, "Invalid token!")
-        // t
-        // @ts-ignore
-        const user = await userModel.findById(decodedToken._id).select("-password -refreshToken");
+    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    // @ts-ignore
+    if (!decodedToken._id) throw new ErrorHandler(401, "Invalid token!")
+    // t
+    // @ts-ignore
+    const user = await userModel.findById(decodedToken._id).select("-password -refreshToken");
 
-        if (!user) throw new ErrorHandler(401, "User not found!");
+    if (!user) throw new ErrorHandler(401, "User not found!");
 
-        req.user = user; // Attaching user to request
-        next(); // Proceeding to next middleware
-    } catch (error) {
-        throw new ErrorHandler(401, "Invalid or expired token!");
-    }
-})
+    req.user = user; // Attaching user to request
+    next(); // Proceeding to next middleware
+
+},
+    { statusCode: 401, message: "Invalid or expired token!" }
+)

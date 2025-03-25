@@ -2,12 +2,10 @@ import { Router } from "express";
 
 
 import {
-    addVideoToWatchHistory,
-    changeUserPassword, getCurrentUser, getUserChannelProfile, loginUser, logoutUser,
+    addVideoToWatchHistory, changeUserPassword, getCurrentUser,
+    getUserChannelProfile, loginUser, logoutUser,
     refreshAccessToken, registerUser, updateCurrentUserDetail,
-    updateUserAvatar,
-    updateUserCoverImage,
-    userWatchHistory
+    updateUserAvatar, updateUserCoverImage, userWatchHistory
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -48,7 +46,7 @@ userRouter.route('/channelDetails/:username').get(getUserChannelProfile)
 // route for logout
 userRouter.route('/logout').get(verifyJWT, logoutUser)
 
-// get getCurrentUser
+// get CurrentUser
 userRouter.route('/currentUserProfile').get(verifyJWT, getCurrentUser);
 
 // change password

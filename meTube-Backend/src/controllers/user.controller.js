@@ -5,7 +5,6 @@ import { APIresponse } from "../utils/APIresponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ErrorHandler } from "../utils/ErrorHandlers.js";
-import { videoModel } from "../models/video.model.js";
 import { deleteAssestFromCloudinary } from "../utils/deleteCloudinaryAsset.js";
 import mongoose from "mongoose";
 
@@ -36,6 +35,7 @@ const generate_Access_And_Refresh_Token = async (userID) => {
 
 }
 
+// works ✅✅
 export const registerUser = asyncHandler(async (req, res) => {
     // get user detail from frontend
     const { fullname, email, username, password } = req.body;
@@ -91,6 +91,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while registration of the user" })
 
+// works ✅✅
 export const loginUser = asyncHandler(async (req, res) => {
     // data from req.body
     const { email, password, username } = req.body;
@@ -131,12 +132,13 @@ export const loginUser = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while logging-in" })
 
+// works ✅✅
 export const logoutUser = asyncHandler(async (req, res) => {
     // get userId from req.user set in auth midware
     const user = await userModel.findByIdAndUpdate(req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1 // removes the feild from doc
             }
         },
         {
@@ -168,6 +170,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while logging-out" })
 
+// works ✅✅
 export const refreshAccessToken = asyncHandler(async (req, res) => {
     // get refreshToken from req object...
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
@@ -217,6 +220,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Unable to get access tokens please login again" })
 
+// works ✅✅
 export const changeUserPassword = asyncHandler(async (req, res) => {
     //get old password and newPassword.
     const { oldPassword, newPassword } = req.body;
@@ -244,6 +248,7 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Password change failed :" })
 
+// works ✅✅
 export const getCurrentUser = asyncHandler(async (req, res) => {
     return res.status(200)
         .json(
@@ -256,6 +261,7 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 })
 
 // BUG-FIXED: Make sure the feidnames match in code and in form-data
+// works ✅✅
 export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
     console.log("userDetails received in body...", req.body);
 
@@ -296,6 +302,7 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
     { statusCode: 500, message: "Email and fullName update failed :" })
 
 // BUG-FIXED: while uploading single file multer send req.file not req.files so => req.file.path directly
+// works ✅✅
 export const updateUserAvatar = asyncHandler(async (req, res) => {
     // get avatar file objects from req.file not req.files as we are only accepting for one feild.
     const avatar = req.file;
@@ -342,6 +349,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
     { statusCode: 500, message: "Avatar update failed :" })
 
 // BUG-FIXED: while uploading single file multer send req.file not req.files so => req.file.path directly
+// works ✅✅
 export const updateUserCoverImage = asyncHandler(async (req, res) => {
 
     // get coverImage file objects from req.file not req.files as we are only accepting for one feild.
@@ -392,16 +400,19 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "coverImage update failed :" })
 
+// works ✅✅
 export const getUserChannelProfile = asyncHandler(async (req, res) => {
     // this will generally get trggered when user clicks on other channel link or profile...
     // get username from params
     const { username } = req.params;
+    console.log("req.params.username :", username);
+
     if (!username?.trim()) throw new ErrorHandler(400, "No username received for fetching channel profile.")
 
     const channelProfile = await userModel.aggregate(
         [
             {
-                $match: { "username": username }
+                $match: { username: username }
             },
             // find subscribers to user....
             {
@@ -433,7 +444,8 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
                     isSubscribed: {
                         $cond: {
                             //          what to check , where it is checked in
-                            if: { $in: [req.user._id, "$allSubscribers.subscriber"] },
+                            if: { $in: [req.user?._id, "$allSubscribers.subscriber"] },
+                            // req.user?._id as secure route is not needed to access this controller
                             then: true,
                             else: false
                         }
@@ -468,18 +480,27 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Unable to fetch channel profile :" })
 
-// add videoId to watch history...
+// add videoId to watch history...    // works ✅✅
 export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
+    // console.log("reveived req.params: ", req.params);
+
     const { videoId } = req.params;
+    // console.log("received videoId :", videoId, " is valid Id: ",
+    //     // @ts-ignore
+    //     ((String)(new mongoose.ObjectId(videoId)) === videoId));
+    //@ts-ignore
+    if (((String)(new mongoose.ObjectId(videoId)) !== videoId) || !mongoose.isValidObjectId(videoId)) {
+        throw new ErrorHandler(400, "Invalid videoId");
+    }
 
     const user = await userModel
         .findByIdAndUpdate(
             req.user._id,
             {
-                $push: {
-                    watchHistory: videoId
+                $addToSet: {
+                    // @ts-ignore
+                    watchHistory: new mongoose.ObjectId(videoId)
                 }
-
             },
             {
                 new: true
@@ -498,13 +519,21 @@ export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Unable to add video to watchHistory :" })
 
+// works ✅✅
 export const userWatchHistory = asyncHandler(async (req, res) => {
+    console.log("fetching watchHistory for : ", req.user, "..... ");
 
     const user = await userModel.aggregate(
         [
             {
                 $match: {
-                    _id: new mongoose.Schema.Types.ObjectId(req.user._id)
+                    // @ts-ignore
+                    _id: req.user._id  // in req.user._id  id is already stored as ObjectId
+                }
+            },
+            {
+                $addFields: {
+                    watchHistory: { $ifNull: ["$watchHistory", []] }
                 }
             },
             {
