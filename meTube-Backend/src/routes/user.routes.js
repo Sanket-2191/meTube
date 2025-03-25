@@ -41,8 +41,7 @@ userRouter.route('/login').post(upload.none(), loginUser)
 userRouter.route('/newAuthenticationTokens').get(refreshAccessToken)
 
 // get channelDetails
-userRouter.route('/channelDetails').get(getUserChannelProfile)
-
+userRouter.route('/channelDetails/:username').get(getUserChannelProfile)
 
 /*------------------------ SECURED ROUTES ------------------------------------------- */
 
@@ -70,7 +69,7 @@ userRouter.route('/change-coverImage')
     .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
 
 // add watchHistory....
-userRouter.route('/add-to-watchHistory').patch(verifyJWT, addVideoToWatchHistory);
+userRouter.route('/add-to-watchHistory/:videoId').patch(verifyJWT, addVideoToWatchHistory);
 // we'll be using params to send videoId not form-data so no need of upload.none()
 
 // get loggedIn user's watchHistory

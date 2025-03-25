@@ -468,7 +468,6 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Unable to fetch channel profile :" })
 
-
 // add videoId to watch history...
 export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
@@ -498,7 +497,6 @@ export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
 
 },
     { statusCode: 500, message: "Unable to add video to watchHistory :" })
-
 
 export const userWatchHistory = asyncHandler(async (req, res) => {
 
