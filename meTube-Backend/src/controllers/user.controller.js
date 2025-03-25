@@ -5,6 +5,9 @@ import { APIresponse } from "../utils/APIresponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ErrorHandler } from "../utils/ErrorHandlers.js";
+import { videoModel } from "../models/video.model.js";
+import { deleteAssestFromCloudinary } from "../utils/deleteCloudinaryAsset.js";
+import mongoose from "mongoose";
 
 
 const generate_Access_And_Refresh_Token = async (userID) => {
@@ -169,7 +172,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     // get refreshToken from req object...
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
     // check if token is present
-    if (!incomingRefreshToken) throw new ErrorHandler(401, "Unauthorized Access!");
+    if (!incomingRefreshToken) throw new ErrorHandler(401, "Unauthorized Access! please login again");
 
     // decode the data contained with token..
     const tokenPayload = jwt.verify(  // this give _id of user.
@@ -320,7 +323,13 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
         {
             new: true
         }
-    ).select("-password -refresh")
+    ).select("-password -refreshToken")
+
+    // delete old avatar from cloudinary..
+    const deleted = await deleteAssestFromCloudinary(req.user.avatar)
+    if (deleted.result !== "ok") {
+        throw new ErrorHandler(500, `Cloudinary avatar delete failed: ${deleted.result}`);
+    }
 
     return res.status(200)
         .json(
@@ -351,7 +360,7 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     // get URL for coverImageFile from cloudinary...
     const cloudinaryOBJ = await uploadOnCloudinary(coverImageLocalFilePath);
     const coverImageURL = cloudinaryOBJ.url;
-    console.log("coverImage url path done");
+    console.log("coverImage url path done :", cloudinaryOBJ);
 
     const user = await userModel.findByIdAndUpdate(
         req.user._id,
@@ -363,7 +372,13 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
         {
             new: true
         }
-    ).select("-password -refresh")
+    ).select("-password -refreshToken")
+
+    // delete old coverImage from cloudinary..
+    const deleted = await deleteAssestFromCloudinary(req.user.coverImage)
+    if (deleted.result !== "ok") {
+        throw new ErrorHandler(500, `Cloudinary coverImage delete failed: ${deleted.result}`);
+    }
 
     return res.status(200)
         .json(
@@ -377,3 +392,195 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "coverImage update failed :" })
 
+export const getUserChannelProfile = asyncHandler(async (req, res) => {
+    // this will generally get trggered when user clicks on other channel link or profile...
+    // get username from params
+    const { username } = req.params;
+    if (!username?.trim()) throw new ErrorHandler(400, "No username received for fetching channel profile.")
+
+    const channelProfile = await userModel.aggregate(
+        [
+            {
+                $match: { "username": username }
+            },
+            // find subscribers to user....
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "channel",
+                    as: "allSubscribers"
+                }
+            },
+            // find no of user currUser has subscribed to.
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "subscriber",
+                    as: "subscribedTo"
+                }
+            },
+            {
+                $addFields: {
+                    subscriberCount: {
+                        $size: "$allSubscribers"
+                    },
+                    subscriptionCount: {
+                        $size: "$subscribedTo"
+                    },
+                    // if logged in user is in the list of "allSubscribers"
+                    isSubscribed: {
+                        $cond: {
+                            //          what to check , where it is checked in
+                            if: { $in: [req.user._id, "$allSubscribers.subscriber"] },
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                    coverImage: 1,
+                    subscriberCount: 1,
+                    subscriptionCount: 1,
+                    isSubscribed: 1
+                }
+            }
+        ]
+    )
+
+    if (!channelProfile?.length) throw new ErrorHandler(404, "channel not found");
+
+    return res.status(200)
+        .json(
+            new APIresponse(
+                200,
+                channelProfile[0],
+                'Channel profile fetched successfully✅✅'
+            )
+        )
+
+},
+    { statusCode: 500, message: "Unable to fetch channel profile :" })
+
+
+// add videoId to watch history...
+export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+
+    const user = await userModel
+        .findByIdAndUpdate(
+            req.user._id,
+            {
+                $push: {
+                    watchHistory: videoId
+                }
+
+            },
+            {
+                new: true
+            }
+        ).select('-password -refreshToken')
+
+    return res.status(200)
+        .json(
+            new APIresponse(
+                200,
+                user,
+                "Video added to watchHistory."
+            )
+        )
+
+},
+    { statusCode: 500, message: "Unable to add video to watchHistory :" })
+
+
+export const userWatchHistory = asyncHandler(async (req, res) => {
+
+    const user = await userModel.aggregate(
+        [
+            {
+                $match: {
+                    _id: new mongoose.Schema.Types.ObjectId(req.user._id)
+                }
+            },
+            {
+                $lookup: {
+                    from: "videos",
+                    localField: "watchHistory",
+                    foreignField: "_id",
+                    as: "watchHistoryObjects",
+                    // we will get owner feild i.e. objectId of a user-model so to get more info about that user
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "owner",
+                                foreignField: "_id",
+                                as: "ownerObjects",
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            fullname: 1,
+                                            username: 1, // can be used to go to channel by passing username in params
+                                            avatar: 1
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        // now we will get ownerObjects as an array and client will have to use 
+                        // ownerObjects[0].fullname , ownerObjects[0].avatar... so to make it easy for them...
+                        {
+                            $addFields: {
+                                ownerObjects: {
+                                    $first: "$ownerObjects"  // "$first" return first element of the specified arrayField
+                                }
+                            }
+                        } //  ownerObjects will be added with existing feilds of video objects
+                    ]
+                }
+            },
+            /*
+                {
+                    $project: {
+                        videoFile: 1,
+                        thumbnail: 1,
+                        title: 1,
+                        description: 1,
+                        duration: 1,
+                        views: 1,
+                        isPublished: 1,
+                        watchHistoryObjects: 1
+                    }
+                }
+            */
+
+            // wont work because on outer level the aggregation is run on user object and,
+            // user dont have all these feild so we have all video feilds in the watchHistory $lookup 
+            // so at end we will get a user object with added field watchHistoryObjects,
+            //  which can be accessed as user[0].watchHistoryObjects
+
+        ]
+    )
+
+    if (!user) throw new ErrorHandler(404, "Watch history not found!");
+
+    // const watchHistory = user.watchHistory;
+
+    return res.status(200)
+        .json(
+            new APIresponse(
+                200,
+                user?.[0]?.watchHistoryObjects
+                ,
+                "watchHistory fetched successfully✅✅"
+            )
+        )
+},
+    { statusCode: 500, message: "Unable to fetch the watchHistory :" });

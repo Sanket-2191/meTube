@@ -13,7 +13,7 @@ const videoSchema = new Schema(
             required: true,
         },
         thumbnail: {
-            typetype: String,
+            type: String,
             required: true,
         },
         title: {
@@ -30,6 +30,10 @@ const videoSchema = new Schema(
             default: 0
         },
         views: {
+            type: Number,
+            default: 0
+        },
+        likes: {
             type: Number,
             default: 0
         },

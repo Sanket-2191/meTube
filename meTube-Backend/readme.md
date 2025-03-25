@@ -55,3 +55,30 @@ return res.status(200)
 ```js 
     const {email,password}=req.body
 ```
+
+# 25-03-2025
+
+ best explaination of aggregation all confusions cleared **https://chatgpt.com/share/67e29994-0bb0-8006-bb84-eea377d8e276**
+
+ 
+When localField contains an array of ObjectIds, MongoDB automatically treats it as multiple values and performs a join for each ID in the array.
+So, when you use:
+
+```js
+{
+    $lookup: {
+        from: "videos",
+        localField: "watchHistory",  // Array of ObjectIds from userModel
+        foreignField: "_id",         // Matching _id field in videos collection
+        as: "watchHistory"           // Output array
+    }
+}
+```
+MongoDB will:
+
+1. Iterate through the watchHistory array in userModel.
+
+2. Find all matching documents in videos where _id is in that array.
+
+3. Return those documents as an array in watchHistory.
+
