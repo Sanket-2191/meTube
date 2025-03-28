@@ -1,4 +1,5 @@
 import multer from "multer";
+import { ErrorHandler } from "../utils/ErrorHandlers.js";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -20,6 +21,19 @@ const storage = multer.diskStorage({
     }
 })
 
-const upload = multer({ storage: storage })
+const upload = multer(
+    {
+        storage: storage,
+        fileFilter: function (req, file, cb) {
+            if (file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "video/mp4") {
+                cb(null, true)
+            } else {
+                // @ts-ignore
+                cb(new ErrorHandler(400, 'Unsupported file format for :', file.fieldname), false); // Reject file properly
+            }
+        }
+    }
+)
 
 export { upload };
+

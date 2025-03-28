@@ -6,7 +6,6 @@ const videoSchema = new Schema(
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            unique: true
         },
         videoFile: {
             type: String,
@@ -48,5 +47,32 @@ const videoSchema = new Schema(
 )
 
 videoSchema.plugin(mongooseAggregatePaginate)
+
+/*
+      Return a paginated response that includes:
+
+            docs: The data for the requested page.
+
+            totalDocs: Total number of documents.
+
+            limit: Number of documents per page.
+
+            page: Current page number.
+
+            totalPages: Total number of pages.
+
+            pagingCounter: Index of the first document on the page.
+
+            hasPrevPage: Boolean for the previous page.
+
+            hasNextPage: Boolean for the next page.
+
+            prevPage: Number of the previous page (if exists).
+
+            nextPage: Number of the next page (if exists).
+
+*/
+
+// videoSchema.index()
 
 export const videoModel = model('Video', videoSchema);

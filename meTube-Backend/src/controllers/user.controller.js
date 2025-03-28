@@ -91,6 +91,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while registration of the user" })
 
+
 // works ✅✅
 export const loginUser = asyncHandler(async (req, res) => {
     // data from req.body
@@ -132,6 +133,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while logging-in" })
 
+
 // works ✅✅
 export const logoutUser = asyncHandler(async (req, res) => {
     // get userId from req.user set in auth midware
@@ -169,6 +171,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
     // req.cookies = {}; // not a good way
 },
     { statusCode: 500, message: "Something went wrong while logging-out" })
+
 
 // works ✅✅
 export const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -220,6 +223,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Unable to get access tokens please login again" })
 
+
 // works ✅✅
 export const changeUserPassword = asyncHandler(async (req, res) => {
     //get old password and newPassword.
@@ -248,6 +252,7 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Password change failed :" })
 
+
 // works ✅✅
 export const getCurrentUser = asyncHandler(async (req, res) => {
     return res.status(200)
@@ -260,7 +265,8 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
         )
 })
 
-// BUG-FIXED: Make sure the feidnames match in code and in form-data
+
+// BUG-FIXED Make sure the feidnames match in code and in form-data
 // works ✅✅
 export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
     console.log("userDetails received in body...", req.body);
@@ -301,7 +307,8 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Email and fullName update failed :" })
 
-// BUG-FIXED: while uploading single file multer send req.file not req.files so => req.file.path directly
+
+// BUG-FIXED while uploading single file multer send req.file not req.files so => req.file.path directly
 // works ✅✅
 export const updateUserAvatar = asyncHandler(async (req, res) => {
     // get avatar file objects from req.file not req.files as we are only accepting for one feild.
@@ -348,7 +355,8 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Avatar update failed :" })
 
-// BUG-FIXED: while uploading single file multer send req.file not req.files so => req.file.path directly
+
+// BUG-FIXED while uploading single file multer send req.file not req.files so => req.file.path directly
 // works ✅✅
 export const updateUserCoverImage = asyncHandler(async (req, res) => {
 
@@ -400,19 +408,28 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "coverImage update failed :" })
 
+
 // works ✅✅
 export const getUserChannelProfile = asyncHandler(async (req, res) => {
     // this will generally get trggered when user clicks on other channel link or profile...
     // get username from params
-    const { username } = req.params;
+    const { username, userId } = req.params;  // we will 
     console.log("req.params.username :", username);
 
-    if (!username?.trim()) throw new ErrorHandler(400, "No username received for fetching channel profile.")
+    if (!username?.trim()) throw new ErrorHandler(400, "No username received for fetching channel profile.");
+
+    if (userId && !(mongoose.isValidObjectId(userId))) throw new ErrorHandler(400, "userId should be valid for fetching channel profile.");
 
     const channelProfile = await userModel.aggregate(
         [
-            {
-                $match: { username: username }
+            userId ? {
+                $match: {
+                    userId: userId
+                }
+            } : {
+                $match: {
+                    username: username
+                }
             },
             // find subscribers to user....
             {
@@ -480,6 +497,7 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Unable to fetch channel profile :" })
 
+
 // add videoId to watch history...    // works ✅✅
 export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     // console.log("reveived req.params: ", req.params);
@@ -518,6 +536,7 @@ export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
 
 },
     { statusCode: 500, message: "Unable to add video to watchHistory :" })
+
 
 // works ✅✅
 export const userWatchHistory = asyncHandler(async (req, res) => {

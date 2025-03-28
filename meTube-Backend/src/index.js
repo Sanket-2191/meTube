@@ -44,13 +44,25 @@ export const app = express();
 
 // checking server running status.....
 app.get('/', (req, res) => {
-    res.send('Hello')
+    return res.status(200)
+        .json(
+            new APIresponse(
+                200,
+                {},
+                "ALL OK👍👍"
+            )
+        )
 })
 
 
 /// ROUTEs import 
 
 import { userRouter } from './routes/user.routes.js';
+import { videoRouter } from './routes/video.routes.js';
+import { APIresponse } from './utils/APIresponse.js';
+
 
 // user end-points
 app.use('/api/v1/users', userRouter);
+//video end-points
+app.use('/api/v1/videos', videoRouter)
