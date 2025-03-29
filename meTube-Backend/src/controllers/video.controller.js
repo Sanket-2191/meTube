@@ -5,6 +5,7 @@ import { APIresponse } from "../utils/APIresponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ErrorHandler } from "../utils/ErrorHandlers.js"
+import { likeModel } from "../models/like.model.js"
 
 
 export const getAllVideos = asyncHandler(async (req, res) => {
@@ -93,6 +94,7 @@ export const getAllVideos = asyncHandler(async (req, res) => {
                     isPublished: true
                 }
             },
+            //@ts-ignore
             sortStage,
         ]
     )
@@ -289,12 +291,21 @@ export const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
 
     const video = await videoModel.findById(videoId);
-
+    // Check if the video exists
+    if (!video) return res.status(404).json({ message: "Video not found" });
     // make sure that the loggedIn user is the owner of the video being deleted...
     if (!(video.owner.equals(req.user._id))) throw new ErrorHandler(402, "Cannot delete videos of other users. deleting video..")
 
     const deletedVideo = await video.deleteOne();
     console.log("deleted video: ", deletedVideo);
+
+    // To ensure properly fetching liked videos we must deleted liked-docs with deleted videoId
+    const deletedLikes = await likeModel.deleteMany({
+        video: videoId
+    });
+
+    console.log(`Deleted ${deletedLikes.deletedCount} likes for deleted video..`);
+
 
     return res.status(200)
         .json(
