@@ -45,6 +45,7 @@ export const app = express();
 // checking server running status.....
 
 import { APIresponse } from './utils/APIresponse.js';
+//@ts-ignore
 app.get('/', (req, res) => {
     return res.status(200)
         .json(
@@ -63,6 +64,8 @@ import { userRouter } from './routes/user.routes.js';
 import { videoRouter } from './routes/video.routes.js';
 import { subscriptionRouter } from './routes/subscription.routes.js';
 import { likeRouter } from './routes/likes.routes.js';
+import { tweetRouter } from './routes/tweet.routes.js';
+import { commentRouter } from './routes/comments.routes.js';
 
 
 // user end-points
@@ -70,6 +73,10 @@ app.use('/api/v1/users', userRouter);
 //video end-points
 app.use('/api/v1/videos', videoRouter)
 // subscription end-points..
-app.use('api.v1/subscriptions', subscriptionRouter);
+app.use('/api/v1/subscriptions', subscriptionRouter);
 // like end-points
 app.use('/api/v1/likes', likeRouter);
+//tweet endpoints
+app.use('/api/v1/tweets', tweetRouter);
+// comments end-points
+app.use('/api/v1/comments', commentRouter);

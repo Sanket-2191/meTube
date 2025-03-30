@@ -6,13 +6,14 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ErrorHandler } from "../utils/ErrorHandlers.js"
 import { likeModel } from "../models/like.model.js"
+import { commentModel } from "../models/comment.model.js"
 
 
 export const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO get all videos based on query, sort, pagination
-    const searchWords = query?.trim().split(" ") || "";
-    const regexSearchQuery = query?.trim().split(" ").map(word => (`.*${word}`)).join("") || "";
+    // const searchWords = query?.trim().split(" ") || "";
+    // const regexSearchQuery = query?.trim().split(" ").map(word => (`.*${word}`)).join("") || "";
 
     const sortTypeNum = (sortType === "asc" ? 1 : -1);
 
@@ -85,23 +86,24 @@ export const getAllVideos = asyncHandler(async (req, res) => {
         };
 
     //@ts-ignore
-    const videos = videoModel.aggregate(
-        [
-            filterWithSearchQueryStage
-            ,
-            {
-                $match: {
-                    isPublished: true
-                }
-            },
-            //@ts-ignore
-            sortStage,
-        ]
-    )
+    const videos = [
+        filterWithSearchQueryStage
+        ,
+        {
+            $match: {
+                isPublished: true
+            }
+        },
+        //@ts-ignore
+        sortStage
+    ]
 
-    const options = { page: parseInt(page), limit: parseInt(limit) }
 
-    const videoData = await videoModel.aggregatePaginate(videos, options);
+    const options = {
+        page: Math.max(1, parseInt(page) || 1),
+        limit: Math.max(1, parseInt(limit) || 10)
+    };
+    const videoData = await videoModel.aggregatePaginate(videoModel.aggregate(videos), options);
 
     return res.status(200)
         .json(
@@ -303,16 +305,16 @@ export const deleteVideo = asyncHandler(async (req, res) => {
     const deletedLikes = await likeModel.deleteMany({
         video: videoId
     });
+    const deleteComments = await commentModel.deleteMany({ video: videoId })
 
-    console.log(`Deleted ${deletedLikes.deletedCount} likes for deleted video..`);
-
+    console.log(`Deleted ${deletedLikes.deletedCount} likes and ${deleteComments.deletedCount} comments for deleted video..`);
 
     return res.status(200)
         .json(
             new APIresponse(
                 200,
                 {},
-                "Video deleted successfully✅✅"
+                `Video deleted successfully✅✅. Deleted ${deletedLikes.deletedCount} likes and ${deleteComments.deletedCount} comments`
             )
         )
 },
