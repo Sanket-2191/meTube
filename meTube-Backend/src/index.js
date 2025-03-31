@@ -66,17 +66,21 @@ import { subscriptionRouter } from './routes/subscription.routes.js';
 import { likeRouter } from './routes/likes.routes.js';
 import { tweetRouter } from './routes/tweet.routes.js';
 import { commentRouter } from './routes/comments.routes.js';
+import { playListRouter } from './routes/playlists.routes.js';
 
+const urlPrefix = '/api/v1/';
 
 // user end-points
-app.use('/api/v1/users', userRouter);
+app.use(`${urlPrefix}users`, userRouter);
 //video end-points
-app.use('/api/v1/videos', videoRouter)
+app.use(`${urlPrefix}videos`, videoRouter);
 // subscription end-points..
-app.use('/api/v1/subscriptions', subscriptionRouter);
+app.use(`${urlPrefix}subscriptions`, subscriptionRouter);
 // like end-points
-app.use('/api/v1/likes', likeRouter);
+app.use(`${urlPrefix}likes`, likeRouter);
 //tweet endpoints
-app.use('/api/v1/tweets', tweetRouter);
+app.use(`${urlPrefix}tweets`, tweetRouter);
 // comments end-points
-app.use('/api/v1/comments', commentRouter);
+app.use(`${urlPrefix}comments`, commentRouter);
+// playlsits end-points
+app.use(`${urlPrefix}playlists`, playListRouter);
