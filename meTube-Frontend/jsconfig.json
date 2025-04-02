@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "module": "ESNext",
+        "target": "ES6",
+        "allowSyntheticDefaultImports": true,
+        "moduleResolution": "node",
+        "jsx": "react-jsx"
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
