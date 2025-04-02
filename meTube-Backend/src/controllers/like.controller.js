@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { ErrorHandler } from "../utils/ErrorHandlers.js"
 import { likeModel } from "../models/like.model.js"
 import { APIresponse } from "../utils/APIresponse.js"
+import { videoModel } from "../models/video.model.js"
 
 
 
@@ -19,6 +20,14 @@ export const toggleVideoLike = asyncHandler(async (req, res) => {
 
     if (likeFind) {
         const deleted = await likeFind.deleteOne();
+
+        await videoModel.findByIdAndUpdate(
+            videoId,
+            {
+                $inc: { likes: -1 }
+
+            }
+        )
         return res.status(200)
             .json(
                 new APIresponse(
@@ -33,6 +42,13 @@ export const toggleVideoLike = asyncHandler(async (req, res) => {
         video: videoId,
         likedBy: req.user._id
     })
+    await videoModel.findByIdAndUpdate(
+        videoId,
+        {
+            $inc: { likes: 1 }
+
+        }
+    )
 
     if (!like) throw new ErrorHandler(500, "Unable to save the like for video .");
 

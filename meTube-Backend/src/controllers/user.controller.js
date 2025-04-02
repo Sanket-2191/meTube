@@ -116,7 +116,8 @@ export const loginUser = asyncHandler(async (req, res) => {
 
     const cookieOptions = {
         httpOnly: true,
-        sercure: true
+        secure: true,
+        sameSite: "Strict"
     }
     return res.status(200)
         .cookie("accessToken", accessToken, cookieOptions)
@@ -174,11 +175,19 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
 
 // works ✅✅
-export const refreshAccessToken = asyncHandler(async (req, res) => {
+export const refreshAccessToken = asyncHandler(async (req, res, next) => {
     // get refreshToken from req object...
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const incomingRefreshToken = req?.cookies?.refreshToken || req?.body?.refreshToken || undefined;
     // check if token is present
-    if (!incomingRefreshToken) throw new ErrorHandler(401, "Unauthorized Access! please login again");
+    if (!incomingRefreshToken) {
+        return res.status(401)
+            .json(
+                new APIresponse(
+                    401,
+                    {},
+                    "Unauthorized Access! please login again")
+            )
+    }
 
     // decode the data contained with token..
     const tokenPayload = jwt.verify(  // this give _id of user.
@@ -188,17 +197,24 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     // @ts-ignore
     // use token data to get the required user.
     const user = await userModel.findById(tokenPayload._id);
+    console.log("user while refreshing tokens : ", user);
 
     // check if refreshtoken had an id error if refreshToken is expired, (we wont user as no Id)
     if (!user) throw new ErrorHandler(401, "Invalid refreshToken!");
 
     // check if expired refresh token is being used....
     if (incomingRefreshToken !== user.refreshToken) {
-        throw new ErrorHandler(401, "refreshToken is Expired please login again!");
+        return res.status(401)
+            .json(
+                new APIresponse(
+                    401,
+                    {},
+                    "Refreshtoken is expired! please login again")
+            )
     }
 
     // gererate new set of tokens, below method will update refreshtoken in DB.
-    const { newAccessToken, newRefreshToken } = await generate_Access_And_Refresh_Token(user._id)
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await generate_Access_And_Refresh_Token(user._id)
     const cookieOptions = {
         httpOnly: true,
         secure: true,

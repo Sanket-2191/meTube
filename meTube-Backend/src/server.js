@@ -1,7 +1,8 @@
 import http from 'http'
+import { Server } from 'socket.io';
+
 import { app } from './index.js';
 import { connectDB } from './db/index.js';
-import { Server } from 'socket.io';
 
 const port = process.env.PORT || 8000;
 
