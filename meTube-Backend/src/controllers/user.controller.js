@@ -53,14 +53,23 @@ export const registerUser = asyncHandler(async (req, res) => {
     })
     userExisits ? console.log(userExisits) : ""
 
-    if (userExisits) throw new ErrorHandler(409, "User already exists with username :" + username);
+    if (userExisits) {
+        return res.status(409)
+            .json(
+                new APIresponse(
+                    409,
+                    {},
+                    "Account already exists with email :" + email
+                )
+            )
+    }
 
     // check for images, check for avatar , cover image is OPTIONAL
     // console.log("Files received:?", req.files || "files not received");
     // console.log("coverImage :", (!req.files?.coverimage ? "false" : "true"));
 
     const avatarFilePath = req.files?.avatar[0]?.path;
-    if (!avatarFilePath) throw new ErrorHandler(409, "Avatar file is required");
+    if (!avatarFilePath) throw new ErrorHandler(400, "Avatar file is required");
     const coverImageFilePath = req.files?.coverimage?.[0]?.path;
 
     // upload them to cloudinary

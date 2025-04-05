@@ -1,0 +1,435 @@
+{
+    "openapi": "3.0.4",
+    "info": {
+        "version": "1.0.0",
+        "description": "API for video streaming application",
+        "title": "meTube"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Local server not in production yet."
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "JWT": {
+                "in": "header",
+                "name": "Authorization",
+                "type": "apiKey"
+            }
+        },
+        "schemas": {
+            "RegisterUserRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "fullname": {
+                        "type": "string"
+                    },
+                    "coverimage": {
+                        "type": "string",
+                        "format": "binary"
+                    },
+                    "avatar": {
+                        "type": "string",
+                        "format": "binary"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "username",
+                    "fullname",
+                    "password",
+                    "avatar"
+                ]
+            },
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ]
+            },
+            "ChangePasswordReq": {
+                "type": "object",
+                "properties": {
+                    "oldPassword": {
+                        "type": "string"
+                    },
+                    "newPassword": {
+                        "type": "string"
+                    }
+                },
+                "newPassword": [
+                    "oldPassword",
+                    "password"
+                ]
+            },
+            "ChangeEmailFullname": {
+                "type": "object",
+                "properties": {
+                    "fullName": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "fullName",
+                    "email"
+                ]
+            },
+            "ChangeAvatar": {
+                "type": "object",
+                "properties": {
+                    "avatar": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                },
+                "required": [
+                    "avatar"
+                ]
+            },
+            "ChangeCoverImage": {
+                "type": "object",
+                "properties": {
+                    "coverImage": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                },
+                "required": [
+                    "coverImage"
+                ]
+            }
+        }
+    },
+    "paths": {
+        "/api/v1/users/register": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Registers a new user.",
+                "description": "Enter your email, username, fullName, password, avatar, and coverImage to create a new profile.",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterUserRequest"
+                            },
+                            "encoding": {
+                                "coverImage": {
+                                    "contentType": "image/png, image/jpeg"
+                                },
+                                "avatar": {
+                                    "contentType": "image/png, image/jpeg"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "New User Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RegisterUserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "User already exists."
+                    },
+                    "5XX": {
+                        "description": "Something went wrong while registering a user."
+                    }
+                }
+            }
+        },
+        "/api/v1/users/login": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Logs in an existing user.",
+                "description": "Enter your email and password to log in to your profile.",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful"
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/channelDetails/{username}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Gets the channel details of a user with the given 'username'.",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Channel details retrieved successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChannelDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/users/logout": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "summary": "Logs a user out of the account.",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/newAuthenticationTokens": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "summary": "Generates new access token for login if you have not explicitly logged-out.",
+                "responses": {
+                    "200": {
+                        "description": "new accessToken created."
+                    },
+                    "4XX": {
+                        "description": "No logged-in user noted."
+                    },
+                    "5XX": {
+                        "description": "Something went wrong while creating new accessToken for a user."
+                    }
+                }
+            }
+        },
+        "/api/v1/users/currentUserProfile": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Gets Profile info of loggedIn user.",
+                "security": [
+                    {
+                        "JWT": {}
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/users/changePassword": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change old password.",
+                "security": [
+                    {
+                        "JWT": {}
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordReq"
+                            }
+                        }
+                    }
+                },
+                "responses": {}
+            }
+        },
+        "/api/v1/users/change-email-fullName": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "summary": "Update user email and fullname.",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangeEmailFullname"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User-email and fullname update successful"
+                    }
+                }
+            }
+        },
+        "/api/v1/users/change-avatar": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update avatar.",
+                "security": [
+                    {
+                        "JWT": {}
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangeAvatar"
+                            },
+                            "encoding": {
+                                "avatar": {
+                                    "contentType": "image/png, image/jpeg"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {}
+            }
+        },
+        "/api/v1/users/change-coverImage": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update CoverImage.",
+                "security": [
+                    {
+                        "JWT": {}
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangeCoverImage"
+                            },
+                            "encoding": {
+                                "coverImage": {
+                                    "contentType": "image/png, image/jpeg"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {}
+            }
+        },
+        "/api/v1/users/add-to-watchHistory/{videoId}": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "add video to watchHistory.",
+                "security": [
+                    {
+                        "JWT": {}
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "parameters": [
+                            {
+                                "name": "videoId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "responses": {}
+            }
+        },
+        "/api/v1/users/watchHistory": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get users watch history.",
+                "security": [
+                    {
+                        "JWT": {}
+                    }
+                ],
+                "responses": {}
+            }
+        }
+    }
+}
