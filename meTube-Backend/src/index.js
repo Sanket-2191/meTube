@@ -15,7 +15,7 @@ export const app = express();
     app.use("/api/v1/meTube-docs", swagger.serve, swagger.setup(apiDocs))
 
     app.use(cors({
-        origin: process.env.CORS_ORIGIN,
+        origin: process.env.CORS_ORIGIN || '*',
         credentials: true
     }));
 
