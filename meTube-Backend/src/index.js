@@ -83,7 +83,7 @@ import { dashboardRouter } from './routes/dashboard.routes.js';
 (() => {
 
 
-    const urlPrefix = '/.netlify/functions/api/';
+    const urlPrefix = '/api/v1/';
 
     // user end-points
     app.use(`${urlPrefix}users`, userRouter);
