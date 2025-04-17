@@ -430,6 +430,702 @@
                 ],
                 "responses": {}
             }
+        },
+        "/api/v1/videos": {
+            "get": {
+                "summary": "Get all published videos",
+                "tags": [
+                    "Videos"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number for pagination"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Number of results per page"
+                    },
+                    {
+                        "in": "query",
+                        "name": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Search term for video title or description"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortBy",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Field to sort by"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortType",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "description": "Sort direction"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of published videos"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Upload and publish a new video",
+                "tags": [
+                    "Videos"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "video",
+                                    "thumbnail",
+                                    "title",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "video": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "thumbnail": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "encoding": {
+                                "thumbnail": {
+                                    "contentType": "image/png, image/jpeg"
+                                },
+                                "video": {
+                                    "contentType": "video/mp4"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Video uploaded successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/videos/{videoId}": {
+            "get": {
+                "summary": "Get video details by ID",
+                "tags": [
+                    "Videos"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video fetched successfully"
+                    }
+                }
+            },
+            "patch": {
+                "summary": "Update video title/description",
+                "tags": [
+                    "Videos"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Video updated successfully"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a video",
+                "tags": [
+                    "Videos"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video deleted successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/videos/video-thumbnail/{videoId}": {
+            "patch": {
+                "summary": "Update video thumbnail",
+                "tags": [
+                    "Videos"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "thumbnail"
+                                ],
+                                "properties": {
+                                    "thumbnail": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            },
+                            "encoding": {
+                                "thumbnail": {
+                                    "contentType": "image/png, image/jpeg"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Thumbnail updated successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/videos/publish-status/{videoId}": {
+            "patch": {
+                "summary": "Toggle publish status of a video",
+                "tags": [
+                    "Videos"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Publish status changed successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/tweets": {
+            "post": {
+                "summary": "Create a new tweet",
+                "tags": [
+                    "Tweet"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "tweetContent": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "tweetContent"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tweet created successfully"
+                    },
+                    "400": {
+                        "description": "Tweet cannot be empty"
+                    }
+                }
+            }
+        },
+        "/api/v1/tweets/user": {
+            "get": {
+                "summary": "Get all tweets of the logged-in user",
+                "tags": [
+                    "Tweet"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User tweets fetched successfully"
+                    },
+                    "500": {
+                        "description": "Something went wrong while fetching user tweets"
+                    }
+                }
+            }
+        },
+        "/api/v1/tweets/{tweetId}": {
+            "patch": {
+                "summary": "Update a tweet",
+                "tags": [
+                    "Tweet"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "tweetId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "tweetUpdateContent": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "tweetUpdateContent"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tweet updated successfully"
+                    },
+                    "400": {
+                        "description": "Invalid request or tweet ID"
+                    },
+                    "402": {
+                        "description": "Cannot edit other user's tweet"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a tweet",
+                "tags": [
+                    "Tweet"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "tweetId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tweet deleted successfully"
+                    },
+                    "400": {
+                        "description": "Invalid tweet ID"
+                    },
+                    "402": {
+                        "description": "Cannot delete other user's tweet"
+                    }
+                }
+            }
+        },
+        "/api/v1/playlist": {
+            "post": {
+                "summary": "Create a new playlist",
+                "tags": [
+                    "Playlist"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Playlist created successfully"
+                    },
+                    "400": {
+                        "description": "Missing playlist name"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/v1/playlist/user/{userId}": {
+            "get": {
+                "summary": "Get playlists of a specific user",
+                "tags": [
+                    "Playlist"
+                ],
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User playlists fetched successfully"
+                    },
+                    "400": {
+                        "description": "Invalid user ID"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/v1/playlist/{playlistId}": {
+            "get": {
+                "summary": "Get playlist by ID",
+                "tags": [
+                    "Playlist"
+                ],
+                "parameters": [
+                    {
+                        "name": "playlistId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Playlist retrieved successfully"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete playlist by ID",
+                "tags": [
+                    "Playlist"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "playlistId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Playlist deleted successfully"
+                    },
+                    "400": {
+                        "description": "Invalid playlist ID"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            },
+            "patch": {
+                "summary": "Update playlist name or description",
+                "tags": [
+                    "Playlist"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "playlistId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Playlist updated successfully"
+                    },
+                    "400": {
+                        "description": "Invalid playlist ID"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/v1/playlist/{playlistId}/{videoId}": {
+            "patch": {
+                "summary": "Add video to playlist",
+                "tags": [
+                    "Playlist"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "playlistId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "videoId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Video added to playlist successfully"
+                    },
+                    "400": {
+                        "description": "Invalid IDs"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Remove video from playlist",
+                "tags": [
+                    "Playlist"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "playlistId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "videoId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Video removed from playlist successfully"
+                    },
+                    "400": {
+                        "description": "Invalid IDs"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
         }
     }
 }

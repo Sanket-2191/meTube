@@ -17,47 +17,6 @@ export const getAllVideos = asyncHandler(async (req, res) => {
 
     const sortTypeNum = (sortType === "asc" ? 1 : -1);
 
-    // const noOfVideosToSkip = (page ? page : 1) * limit
-
-    // if query is fullname ... then....
-    // what can we do with userId? 
-
-    // populating video object with owner details
-    // const ownerPopulateStage = {
-    //     $lookup: {
-    //         from: "users",
-    //         localField: "owner",
-    //         foreignField: "_id",
-    //         as: "videoOwner"
-    //         //, pipeline: [
-    //         //     {
-    //         //         $match: {
-    //         //             $or: [
-    //         //                 {
-    //         //                     fullName: {
-    //         //                         $regex: `${query.trim()}`,
-    //         //                         $options: "i"
-    //         //                     },
-    //         //                 },
-    //         //                 {
-    //         //                     fullName: {
-    //         //                         $regex: regexSearchQuery,
-    //         //                         $options: "i"
-    //         //                     }
-    //         //                 },
-
-    //         //             ]
-    //         //         }
-    //         //     }
-    //         // ]
-    //     }
-    // }
-
-    // const createObjOfvideoOwnerStage = {
-    //     $addFields: {
-    //         videoOwner: "$videoOwner.0"
-    //     }
-    // }
 
     const filterWithSearchQueryStage = query ? {
         $search: {
@@ -114,48 +73,6 @@ export const getAllVideos = asyncHandler(async (req, res) => {
             )
         )
 })
-// const videos = await videoModel.find(
-//     {
-//         $and: [
-//             {
-//                 $or: query ? [
-//                     {
-//                         // searching query words in title....
-//                         title: {
-//                             $regex: `${query.trim()}`,
-//                             $options: "i"
-//                         }
-//                     },
-//                     {
-//                         // searching query words in description....
-//                         $or: [
-//                             {
-//                                 description: {
-//                                     $regex: `${query.trim()}`,
-//                                     $options: "i"
-//                                 }
-//                             },
-//                             {
-//                                 description: {
-//                                     $regex: regexSearchQuery,
-//                                     $options: "i"
-//                                 }
-//                             }
-//                         ]
-//                     },
-//                     {}
-//                 ] : [{}]  // return all videos if searchquery is empty..
-//             },
-//             {
-//                 isPublished: true
-//             }
-//         ]
-//     }
-// )
-//     .sort({ [sortBy]: sortTypeNum })
-//     .skip(noOfVideosToSkip)
-//     .limit(limit)
-
 
 export const publishAVideo = asyncHandler(async (req, res) => {
     // TODO get video, upload to cloudinary, create video
@@ -229,7 +146,7 @@ export const getVideoById = asyncHandler(async (req, res) => {
 
 export const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
-    //TODO: update video details like title, description
+    //TODO update video details like title, description
 
     const { title, description } = req.body;
 
