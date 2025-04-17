@@ -1126,6 +1126,323 @@
                     }
                 }
             }
+        },
+        "/api/v1/likes/video/{videoId}": {
+            "post": {
+                "summary": "Like or unlike a video",
+                "tags": [
+                    "Likes"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the video to like/unlike"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video unliked successfully"
+                    },
+                    "201": {
+                        "description": "Video liked successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/likes/comment/{commentId}": {
+            "post": {
+                "summary": "Like or unlike a comment",
+                "tags": [
+                    "Likes"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "commentId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the comment to like/unlike"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment unliked successfully"
+                    },
+                    "201": {
+                        "description": "Comment liked successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/likes/tweet/{tweetId}": {
+            "post": {
+                "summary": "Like or unlike a tweet",
+                "tags": [
+                    "Likes"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "tweetId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the tweet to like/unlike"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tweet unliked successfully"
+                    },
+                    "201": {
+                        "description": "Tweet liked successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/likes/liked-videos": {
+            "get": {
+                "summary": "Get all liked videos by the user",
+                "tags": [
+                    "Likes"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of liked videos"
+                    }
+                }
+            }
+        },
+        "/api/v1/comments/video/{videoId}": {
+            "get": {
+                "summary": "Get all comments on a video",
+                "tags": [
+                    "Comments"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the video to fetch comments for"
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Page number for pagination"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "Number of comments per page"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comments fetched successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/comments/comment/{videoId}": {
+            "post": {
+                "summary": "Add a comment to a video",
+                "tags": [
+                    "Comments"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "videoId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the video to comment on"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "commentContent"
+                                ],
+                                "properties": {
+                                    "commentContent": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Comment created successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/comments/comment/{commentId}": {
+            "patch": {
+                "summary": "Update a comment",
+                "tags": [
+                    "Comments"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "commentId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the comment to update"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "commentUpdateContent"
+                                ],
+                                "properties": {
+                                    "commentUpdateContent": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Comment updated successfully"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a comment",
+                "tags": [
+                    "Comments"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "commentId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "ID of the comment to delete"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment deleted successfully"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/stats": {
+            "get": {
+                "summary": "Get channel stats for authenticated user",
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fetched user's channel stats"
+                    },
+                    "500": {
+                        "description": "Something went wrong while fetching channel stats"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/videos": {
+            "get": {
+                "summary": "Get all videos uploaded by authenticated user",
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fetched user's channel videos"
+                    },
+                    "500": {
+                        "description": "Something went wrong while fetching channel videos"
+                    }
+                }
+            }
         }
     }
 }
