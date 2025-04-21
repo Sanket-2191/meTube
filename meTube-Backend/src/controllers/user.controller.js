@@ -114,10 +114,26 @@ export const loginUser = asyncHandler(async (req, res) => {
     const user = await userModel.findOne({
         $or: [{ email }, { username }]
     })
-    if (!user) throw new ErrorHandler(400, "Cannot find user, please complete registration!");
+    if (!user) {
+        return res.status(404)
+            .json(
+                new APIresponse(404,
+                    {}
+                    , "Cannot find user, please complete registration!"
+                )
+            )
+    }
     // check password
     const isPasswordValid = await user.isPasswordCorrect(password || "");
-    if (!isPasswordValid) throw new ErrorHandler(400, "Invalid password entered!");
+    if (!isPasswordValid) {
+        return res.status(401)
+            .json(
+                new APIresponse(401,
+                    {}
+                    , "Invalid password entered!"
+                )
+            )
+    }
     // generate access and refresh tokens..
     const { accessToken, refreshToken } = await generate_Access_And_Refresh_Token(user._id)
     // send tokens with cookie
