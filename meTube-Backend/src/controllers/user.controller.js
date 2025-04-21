@@ -242,7 +242,7 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
     const user = await userModel.findById(req.user?._id);
 
     // check for old password 
-    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    const isPasswordCorrect = await user.isPasswordCorrect(res, oldPassword);
     if (!isPasswordCorrect) return sendError(res, 400, "Old password is incorrect!");
 
     // set new password, bcrypt in usermodel will handle hashing of password.
@@ -328,7 +328,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
     ).select("-password -refreshToken");
 
     // delete old avatar from cloudinary..
-    const deleted = await deleteAssestFromCloudinary(req.user.avatar);
+    const deleted = await deleteAssestFromCloudinary(res, req.user.avatar);
     if (deleted.result !== "ok") return sendError(res, 500, `Cloudinary avatar delete failed: ${deleted.result}`)
 
     return sendAPIResp(
@@ -374,7 +374,7 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     ).select("-password -refreshToken")
 
     // delete old coverImage from cloudinary..
-    const deleted = await deleteAssestFromCloudinary(req.user.coverImage);
+    const deleted = await deleteAssestFromCloudinary(res, req.user.coverImage);
 
     if (deleted.result !== "ok") return sendError(res, 500, `Cloudinary coverImage delete failed`)
 
