@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import { app } from './index.js';
 import { connectDB } from './db/index.js';
 
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 3300;
 
 const server = http.createServer(app); // needed for socket connection.... 
 

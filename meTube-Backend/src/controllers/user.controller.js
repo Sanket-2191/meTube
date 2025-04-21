@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 import { userModel } from "../models/user.model.js";
 import { APIresponse } from "../utils/APIresponse.js";
@@ -6,10 +7,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ErrorHandler } from "../utils/ErrorHandlers.js";
 import { deleteAssestFromCloudinary } from "../utils/deleteCloudinaryAsset.js";
-import mongoose from "mongoose";
+import { sendError } from "../utils/sendErrorResp.js";
+import { sendAPIResp } from "../utils/sendApiResp.js";
 
 
-const generate_Access_And_Refresh_Token = async (userID) => {
+const generate_Access_And_Refresh_Token = async (res, userID) => {
 
     try {
         const user = await userModel.findById({ _id: userID });
@@ -30,53 +32,48 @@ const generate_Access_And_Refresh_Token = async (userID) => {
         return { accessToken, refreshToken };
 
     } catch (error) {
-        throw new ErrorHandler(500, "Error while generating Access token")
+        return sendError(res, 500, "Error while generating Access token");
     }
 
 }
 
 // works ✅✅
+
 export const registerUser = asyncHandler(async (req, res) => {
     // get user detail from frontend
     const { fullname, email, username, password } = req.body;
     console.log("req.body structure: ", req.body);
 
     // validations -> fields are not empty, email is in valid form, password matches strength requirements
-    if (!email) throw new ErrorHandler(400, "Email is required!!");
-    if (!fullname) throw new ErrorHandler(400, "Fullname is required!!");
-    if (!username) throw new ErrorHandler(400, "Username is required!!");
-    if (!password) throw new ErrorHandler(400, "Password is required!!");
+    if (!email) return sendError(res, 400, "Email is required!!");
+    if (!fullname) return sendError(res, 400, "Fullname is required!!");
+    if (!username) return sendError(res, 400, "Username is required!!");
+    if (!password) return sendError(res, 400, "Password is required!!");
+
 
     // check if user exists
-    const userExisits = await userModel.findOne({
-        $or: [{ email }, { username }]
-    })
-    userExisits ? console.log(userExisits) : ""
+    const userEmailExisits = await userModel.findOne({ email })
+    if (userEmailExisits) return sendError(res, 409, "Account already exists with email :" + email);
 
-    if (userExisits) {
-        return res.status(409)
-            .json(
-                new APIresponse(
-                    409,
-                    {},
-                    "Account already exists with email :" + email
-                )
-            )
-    }
+    const usernameExisits = await userModel.findOne({ username })
+    if (usernameExisits) return sendError(res, 409, "Account already exists with username :" + username);
 
     // check for images, check for avatar , cover image is OPTIONAL
     // console.log("Files received:?", req.files || "files not received");
     // console.log("coverImage :", (!req.files?.coverimage ? "false" : "true"));
 
     const avatarFilePath = req.files?.avatar[0]?.path;
-    if (!avatarFilePath) throw new ErrorHandler(400, "Avatar file is required");
+    if (!avatarFilePath) return sendError(res, 400, "Avatar file is required");
+
     const coverImageFilePath = req.files?.coverimage?.[0]?.path;
 
     // upload them to cloudinary
     const avatarURL = await uploadOnCloudinary(avatarFilePath);
     let coverImageURL = null;
     if (coverImageFilePath) coverImageURL = await uploadOnCloudinary(coverImageFilePath);
-    if (!avatarURL) throw new ErrorHandler(500, "Avatar creation failed :" + { avatarURL: avatarURL.url });
+    if (!avatarURL) return sendError(res, 500, "Avatar creation failed");
+
+
     // create user object, get object from DB
     const newUser = await userModel.create({
         username,
@@ -91,14 +88,15 @@ export const registerUser = asyncHandler(async (req, res) => {
     const createdUser = await userModel.findById({ _id: newUser._id }).select("-password -refreshToken")
 
     // check if user is created
-    if (!createdUser) throw new ErrorHandler(500, "New User creation failed");
-    // return response.
+    if (!createdUser) return sendError(res, 500, "New User creation failed");
 
-    res.status(201).json(
-        new APIresponse(200, createdUser, "User creation successful✅✅")
-    )
+
+    // return response.
+    return sendAPIResp(res, 201, "User creation successful✅✅", createdUser);
+
 },
-    { statusCode: 500, message: "Something went wrong while registration of the user" })
+    { statusCode: 500, message: "Something went wrong while registration of the user" }
+);
 
 
 // works ✅✅
@@ -108,34 +106,27 @@ export const loginUser = asyncHandler(async (req, res) => {
     // check credentials for login
     console.log("login req.body: ", req.body);
 
-    if (!username && !email) throw new ErrorHandler(400, "Username or email needed!");
+    if (!username && !email) {
+        return sendError(res, 400, "Username or email needed!");
+    }
 
     // find the user
     const user = await userModel.findOne({
         $or: [{ email }, { username }]
     })
     if (!user) {
-        return res.status(404)
-            .json(
-                new APIresponse(404,
-                    {}
-                    , "Cannot find user, please complete registration!"
-                )
-            )
+        return sendError(res, 404, "Cannot find user, please complete registration!");
     }
+
     // check password
     const isPasswordValid = await user.isPasswordCorrect(password || "");
     if (!isPasswordValid) {
-        return res.status(401)
-            .json(
-                new APIresponse(401,
-                    {}
-                    , "Invalid password entered!"
-                )
-            )
+        return sendError(res, 401, "Invalid password entered!");
     }
+
     // generate access and refresh tokens..
-    const { accessToken, refreshToken } = await generate_Access_And_Refresh_Token(user._id)
+    const { accessToken, refreshToken } = await generate_Access_And_Refresh_Token(res, user._id)
+
     // send tokens with cookie
     const loggedInUser = await userModel.findById(user._id).select("-password -refreshToken");
 
@@ -144,6 +135,7 @@ export const loginUser = asyncHandler(async (req, res) => {
         secure: true,
         sameSite: "Strict"
     }
+
     return res.status(200)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
@@ -157,7 +149,9 @@ export const loginUser = asyncHandler(async (req, res) => {
                 , `${loggedInUser.username} logged in successfully✅✅`)
         )
 },
-    { statusCode: 500, message: "Something went wrong while logging-in" })
+    { statusCode: 500, message: "Something went wrong while logging-in" }
+);
+
 
 
 // works ✅✅
@@ -189,12 +183,6 @@ export const logoutUser = asyncHandler(async (req, res) => {
                 "User loggedout😥"
             )
         )
-
-    // user.refreshToken = null;
-
-    // user.save({ validateBeforeSave: false }); // not a good way
-
-    // req.cookies = {}; // not a good way
 },
     { statusCode: 500, message: "Something went wrong while logging-out" })
 
@@ -203,43 +191,27 @@ export const logoutUser = asyncHandler(async (req, res) => {
 export const refreshAccessToken = asyncHandler(async (req, res, next) => {
     // get refreshToken from req object...
     const incomingRefreshToken = req?.cookies?.refreshToken || req?.body?.refreshToken || undefined;
-    // check if token is present
-    if (!incomingRefreshToken) {
-        return res.status(401)
-            .json(
-                new APIresponse(
-                    401,
-                    {},
-                    "Unauthorized Access! please login again")
-            )
-    }
 
+    // check if token is present
+    if (!incomingRefreshToken) return sendError(res, 401, "Unauthorized Access! please login again");
     // decode the data contained with token..
-    const tokenPayload = jwt.verify(  // this give _id of user.
+    const tokenPayload = jwt.verify(  // this gives _id of user.
         incomingRefreshToken,
         process.env.REFRESH_TOKEN_SECRET
     )
     // @ts-ignore
     // use token data to get the required user.
     const user = await userModel.findById(tokenPayload._id);
-    console.log("user while refreshing tokens : ", user);
+    // console.log("user while refreshing tokens : ", user);
 
-    // check if refreshtoken had an id error if refreshToken is expired, (we wont user as no Id)
-    if (!user) throw new ErrorHandler(401, "Invalid refreshToken!");
+    // check if refreshtoken had an id error if refreshToken is expired, (we won't use as no Id)
+    if (!user) return sendError(res, 401, "Invalid refreshToken!");
 
     // check if expired refresh token is being used....
-    if (incomingRefreshToken !== user.refreshToken) {
-        return res.status(401)
-            .json(
-                new APIresponse(
-                    401,
-                    {},
-                    "Refreshtoken is expired! please login again")
-            )
-    }
+    if (incomingRefreshToken !== user.refreshToken) return sendError(res, 401, "Refreshtoken is expired! please login again");
 
-    // gererate new set of tokens, below method will update refreshtoken in DB.
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await generate_Access_And_Refresh_Token(user._id)
+    // generate new set of tokens, below method will update refreshtoken in DB.
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await generate_Access_And_Refresh_Token(res, user._id);
     const cookieOptions = {
         httpOnly: true,
         secure: true,
@@ -253,59 +225,44 @@ export const refreshAccessToken = asyncHandler(async (req, res, next) => {
             new APIresponse(
                 200,
                 {
-
                     accessToken: newAccessToken,
                     refreshToken: newRefreshToken
-
                 },
-                "User LoggedIn again"
+                "User LoggedIn successfully with new tokens✅✅"
             )
         )
 },
-    { statusCode: 500, message: "Unable to get access tokens please login again" })
-
+    { statusCode: 500, message: "Unable to get access tokens please login again" });
 
 // works ✅✅
 export const changeUserPassword = asyncHandler(async (req, res) => {
-    //get old password and newPassword.
+    // get old password and newPassword.
     const { oldPassword, newPassword } = req.body;
+
     // get user._id from req.user and get user from DB
     /*
         we know req obj will have user because, we are using authMidware in changePassword route
     */
     const user = await userModel.findById(req.user?._id);
+
     // check for old password 
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
-    if (!isPasswordCorrect) throw new ErrorHandler(400, "Old password is incorrect!");
+    if (!isPasswordCorrect) return sendError(res, 400, "Old password is incorrect!");
 
     // set new password, bcrypt in usermodel will handle hashing of password.
     user.password = newPassword;
 
     await user.save({ validateBeforeSave: false });
 
-    return res.status(201).json(
-        new APIresponse(
-            200,
-            {},
-            "Password changed successfully✅✅"
-        )
-    )
+    return sendAPIResp(res, 200, "Password changed successfully✅✅", {});
 },
-    { statusCode: 500, message: "Password change failed :" })
-
+    { statusCode: 500, message: "Password change failed :" });
 
 // works ✅✅
 export const getCurrentUser = asyncHandler(async (req, res) => {
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                req.user,
-                "Current user fetched successfully✅✅"
-            )
-        )
-})
-
+    return sendAPIResp(res, 200, "Current user fetched successfully✅✅", req.user);
+},
+    { statusCode: 500, message: "Unable to fetch Current user." });
 
 // BUG-FIXED Make sure the feidnames match in code and in form-data
 // works ✅✅
@@ -316,8 +273,7 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
 
     console.log("1. find the user with req.user._id=", req.user._id);
 
-    if (!(fullName && email)) throw new ErrorHandler(400, "All feilds are required");
-
+    if (!(fullName && email)) return sendError(400, "All fields are required");
 
     console.log("2. find the user with req.user._id=", req.user._id);
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -333,41 +289,37 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
         }
     ).select("-password -refreshToken");
     // console.log("couldn't find the user with req.user._id=", req.user._id);
-    if (!updatedUser) throw new ErrorHandler(400, "User not found")
+    if (!updatedUser) return sendError(404, "User not found");
 
-
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                updatedUser,
-                "User updated successfully✅✅"
-            )
-        )
-
+    return sendAPIResp(
+        res,
+        200,
+        "User updated successfully✅✅",
+        updatedUser
+    );
 },
-    { statusCode: 500, message: "Email and fullName update failed :" })
-
+    { statusCode: 500, message: "Email and fullName update failed :" });
 
 // BUG-FIXED while uploading single file multer send req.file not req.files so => req.file.path directly
 // works ✅✅
+
 export const updateUserAvatar = asyncHandler(async (req, res) => {
-    // get avatar file objects from req.file not req.files as we are only accepting for one feild.
+    // get avatar file objects from req.file not req.files as we are only accepting for one field.
     const avatar = req.file;
-    if (!avatar) throw new ErrorHandler(400, "No file received for avatar update");
+    if (!avatar) return sendError(400, "No file received for avatar update");
 
     // get localFilePath for avatar.
     const avatarLocalFilePath = avatar?.path;
-    if (!avatarLocalFilePath) throw new ErrorHandler(500,
+    if (!avatarLocalFilePath) return sendError(500,
         "Unable to create file locally while avatar update!");
 
     // get URL for avatarFile from cloudinary...
     const cloudinaryOBJ = await uploadOnCloudinary(avatarLocalFilePath);
     const avatarURL = cloudinaryOBJ.url;
-    if (!avatarURL) throw new ErrorHandler(500,
+    if (!avatarURL) return sendError(500,
         "Unable to create cloudinary-url for avatar update!");
 
-
+    // update user with new avatar URL
     const user = await userModel.findByIdAndUpdate(
         req.user._id,
         {
@@ -378,24 +330,22 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
         {
             new: true
         }
-    ).select("-password -refreshToken")
+    ).select("-password -refreshToken");
 
     // delete old avatar from cloudinary..
-    const deleted = await deleteAssestFromCloudinary(req.user.avatar)
+    const deleted = await deleteAssestFromCloudinary(req.user.avatar);
     if (deleted.result !== "ok") {
-        throw new ErrorHandler(500, `Cloudinary avatar delete failed: ${deleted.result}`);
+        return sendError(500, `Cloudinary avatar delete failed: ${deleted.result}`);
     }
 
-    return res.status(200)
-        .json(
-            new APIresponse(200,
-                user,
-                "Avatar update successful✅✅"
-            )
-        )
+    return sendAPIResp(
+        res,
+        200,
+        "Avatar update successful✅✅",
+        user
+    );
 },
-    { statusCode: 500, message: "Avatar update failed :" })
-
+    { statusCode: 500, message: "Avatar update failed :" });
 
 // BUG-FIXED while uploading single file multer send req.file not req.files so => req.file.path directly
 // works ✅✅
@@ -405,11 +355,11 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     // console.log("coverImage file :", req.file);
 
     const coverImage = req.file;
-    if (!coverImage) throw new ErrorHandler(400, "No file received for coverImage update");
+    if (!coverImage) return sendError(400, "No file received for coverImage update");
 
     // get localFilePath for coverImage.
     const coverImageLocalFilePath = coverImage?.path;
-    if (!coverImageLocalFilePath) throw new ErrorHandler(500,
+    if (!coverImageLocalFilePath) return sendError(500,
         "Unable to create file locally while coverImage update!");
     // console.log("coverImage loc path done");
 
@@ -434,7 +384,7 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     // delete old coverImage from cloudinary..
     const deleted = await deleteAssestFromCloudinary(req.user.coverImage)
     if (deleted.result !== "ok") {
-        throw new ErrorHandler(500, `Cloudinary coverImage delete failed: ${deleted.result}`);
+        return sendError(500, `Cloudinary coverImage delete failed: ${deleted.result}`);
     }
 
     return res.status(200)
@@ -457,9 +407,9 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username, userId } = req.params;  // we will 
     console.log("req.params.username :", username);
 
-    if (!username?.trim()) throw new ErrorHandler(400, "No username received for fetching channel profile.");
+    if (!username?.trim()) return sendError(400, "No username received for fetching channel profile.");
 
-    if (userId && !(mongoose.isValidObjectId(userId))) throw new ErrorHandler(400, "userId should be valid for fetching channel profile.");
+    if (userId && !(mongoose.isValidObjectId(userId))) return sendError(400, "userId should be valid for fetching channel profile.");
 
     const channelProfile = await userModel.aggregate(
         [
@@ -524,7 +474,7 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
         ]
     )
 
-    if (!channelProfile?.length) throw new ErrorHandler(404, "channel not found");
+    if (!channelProfile?.length) return sendError(404, "channel not found");
 
     return res.status(200)
         .json(
@@ -549,7 +499,7 @@ export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     //     ((String)(new mongoose.ObjectId(videoId)) === videoId));
     //@ts-ignore
     if (((String)(new mongoose.ObjectId(videoId)) !== videoId) || !mongoose.isValidObjectId(videoId)) {
-        throw new ErrorHandler(400, "Invalid videoId");
+        return sendError(400, "Invalid videoId");
     }
 
     const user = await userModel
@@ -633,32 +583,12 @@ export const userWatchHistory = asyncHandler(async (req, res) => {
                     ]
                 }
             },
-            /*
-                {
-                    $project: {
-                        videoFile: 1,
-                        thumbnail: 1,
-                        title: 1,
-                        description: 1,
-                        duration: 1,
-                        views: 1,
-                        isPublished: 1,
-                        watchHistoryObjects: 1
-                    }
-                }
-            */
-
-            // wont work because on outer level the aggregation is run on user object and,
-            // user dont have all these feild so we have all video feilds in the watchHistory $lookup 
-            // so at end we will get a user object with added field watchHistoryObjects,
-            //  which can be accessed as user[0].watchHistoryObjects
 
         ]
     )
 
-    if (!user) throw new ErrorHandler(404, "Watch history not found!");
+    if (!user) return sendError(404, "Watch history not found!");
 
-    // const watchHistory = user.watchHistory;
 
     return res.status(200)
         .json(
