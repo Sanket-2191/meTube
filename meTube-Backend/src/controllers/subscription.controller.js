@@ -1,13 +1,14 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
+
 import { subscriptionModel } from "../models/subscription.model.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { ErrorHandler } from "../utils/ErrorHandlers.js"
-import { APIresponse } from "../utils/APIresponse.js"
+import { sendError } from "../utils/sendErrorResp.js"
+import { sendAPIResp } from "../utils/sendApiResp.js"
 
 
 export const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params
-    if (!mongoose.isValidObjectId(channelId)) throw new ErrorHandler(400, "Please provide channel Id");
+    if (!mongoose.isValidObjectId(channelId)) return sendError(res, 400, "Please provide channel Id");
     // TODO toggle subscription
     const subscriptionFind = await subscriptionModel.findOne(
         {
@@ -18,14 +19,12 @@ export const toggleSubscription = asyncHandler(async (req, res) => {
     )
     if (subscriptionFind) {
         const deleted = await subscriptionFind.deleteOne();
-        return res.status(200)
-            .json(
-                new APIresponse(
-                    200,
-                    deleted,
-                    "Subscription cancelled !!"
-                )
-            )
+        return sendAPIResp(
+            res,
+            200,
+            "Subscription cancelled !!",
+            deleted
+        )
     }
 
 
@@ -34,16 +33,15 @@ export const toggleSubscription = asyncHandler(async (req, res) => {
         subscriber: req.user._id
     })
 
-    if (!subscription) throw new ErrorHandler(500, "Unable to save subsbcription.");
+    if (!subscription) return sendError(res, 500, "Unable to save subsbcription.");
 
-    return res.status(201)
-        .json(
-            new APIresponse(
-                200,
-                subscription,
-                "Subscription successfull✅✅"
-            )
-        )
+    return sendAPIResp(
+        res,
+        201,
+        "Subscription successfull✅✅",
+        subscription
+    )
+
 
 },
     { statusCode: 500, message: "Failed to create/delete subscription." })
@@ -52,7 +50,7 @@ export const toggleSubscription = asyncHandler(async (req, res) => {
 export const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
 
-    if (!mongoose.isValidObjectId(channelId)) throw new ErrorHandler('Please provide vaid channelId');
+    if (!mongoose.isValidObjectId(channelId)) return sendError(res, 'Please provide vaid channelId');
 
     const subscriberList = await subscriptionModel.aggregate(
         [
@@ -95,14 +93,13 @@ export const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
     )
 
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                subscriberList,
-                subscriberList.length ? "Fetched all subscribers" : "No subcribers on account."
-            )
-        )
+    return sendAPIResp(
+        res,
+        200,
+        subscriberList.length ? "Fetched all subscribers" : "No subcribers on account.",
+        subscriberList
+    )
+
 
 },
     { statusCode: 500, message: "Failed to fetch all subscribers." })

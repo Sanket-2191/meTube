@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from 'bcrypt';
+import { sendError } from "../utils/sendErrorResp";
 
 
 const userSchema = new Schema(
@@ -61,15 +62,27 @@ userSchema.pre("save", async function (next) {
         modified and only run when "password" is modified
     */
     if (!this.isModified('password')) return next();
+    try {
 
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
+        this.password = await bcrypt.hash(this.password, 10);
+        next();
+    } catch (error) {
+        throw new Error(error.message);
+    }
 })
 
 // for login when user enters password...
 
-userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password);
+userSchema.methods.isPasswordCorrect = async function (res, password) {
+    try {
+        return await bcrypt.compare(password, this.password);
+    } catch (error) {
+        return sendError(
+            res,
+            500,
+            error.message
+        )
+    }
 }
 
 userSchema.methods.generateAccessToken = function () {

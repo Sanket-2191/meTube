@@ -1,14 +1,14 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { playListModel } from "../models/playlist.model.js"
-import { APIresponse } from "../utils/APIresponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { ErrorHandler } from "../utils/ErrorHandlers.js"
+import { sendError } from "../utils/sendErrorResp.js";
+import { sendAPIResp } from "../utils/sendApiResp.js";
 
 
 export const createPlaylist = asyncHandler(async (req, res) => {
     const { name, description } = req.body
 
-    if (!name) throw new ErrorHandler(400, "PlayList must have a name.")
+    if (!name) return sendError(res, 400, "PlayList must have a name.")
 
     //TODO create playlist
     const playList = await playListModel.create({
@@ -17,16 +17,15 @@ export const createPlaylist = asyncHandler(async (req, res) => {
         owner: req.user._id
     })
 
-    if (!playList) throw new ErrorHandler(500, "Uable to save new playlist.");
+    if (!playList) return sendError(res, 500, "Uable to save new playlist.");
 
-    return res.status(201)
-        .json(
-            new APIresponse(
-                200,
-                playList,
-                "PlayList created successfully✅✅"
-            )
-        )
+    return sendAPIResp(
+        res,
+        201,
+        "PlayList created successfully✅✅",
+        playList
+    )
+
 
 },
     { statusCode: 500, message: "Something went wrong while creating new playList." });
@@ -34,7 +33,7 @@ export const createPlaylist = asyncHandler(async (req, res) => {
 export const getUserPlaylists = asyncHandler(async (req, res) => {
     const { userId } = req.params
     //TODO get user playlists
-    if (!userId || !isValidObjectId(userId)) throw new ErrorHandler(400, "A valid userId is required to get their playlist.");
+    if (!userId || !isValidObjectId(userId)) return sendError(res, 400, "A valid userId is required to get their playlist.");
 
     const userPlayLists = await playListModel.aggregate([
         { $match: { owner: req.user._id } },
@@ -92,14 +91,13 @@ export const getUserPlaylists = asyncHandler(async (req, res) => {
         }
     ])
 
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                userPlayLists,
-                userPlayLists.length ? "Fetched playlists for user.👍✅" : "No playlist found for the user."
-            )
-        )
+    return sendAPIResp(
+        res,
+        200,
+        userPlayLists.length ? "Fetched playlists for user.👍✅" : "No playlist found for the user.",
+        userPlayLists
+    )
+
 },
     { statusCode: 500, message: "Something went wrong while fetching all playLists for the user." });
 
@@ -163,14 +161,13 @@ export const getPlaylistById = asyncHandler(async (req, res) => {
         }
     ]);
 
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                playlist,
-                playlist.length ? "Fetched the requested playlist.👍✅" : "No playlist found with requested Id."
-            )
-        )
+    return sendAPIResp(
+        res,
+        200,
+        playlist.length ? "Fetched the requested playlist.👍✅" : "No playlist found with requested Id.",
+        playlist[0]
+    )
+
 
 },
     { statusCode: 500, message: "Something went wrong while fetching the requested playlist." });
@@ -179,7 +176,7 @@ export const addVideoToPlaylist = asyncHandler(async (req, res) => {
     const { playlistId, videoId } = req.params
 
     if (!(isValidObjectId(playlistId) && isValidObjectId(videoId)))
-        throw new ErrorHandler(400, "playlistId and VideoId must be vaild mongodb Id");
+        return sendError(res, 400, "playlistId and VideoId must be vaild mongodb Id");
 
     const updatedPlaylist = await playListModel.findByIdAndUpdate(
         playlistId,
@@ -196,16 +193,15 @@ export const addVideoToPlaylist = asyncHandler(async (req, res) => {
         }
     )
 
-    if (!updatedPlaylist) throw new ErrorHandler(500, "Unable to add new video to playlist.");
+    if (!updatedPlaylist) return sendError(res, 500, "Unable to add new video to playlist.");
 
-    return res.status(201)
-        .json(
-            new APIresponse(
-                200,
-                updatePlaylist,
-                "New Video added to playlist successfully✅✅"
-            )
-        )
+    return sendAPIResp(
+        res,
+        200,
+        "New Video added to playlist successfully✅✅",
+        updatePlaylist
+    )
+
 },
     { statusCode: 500, message: "Something went wrong while adding requested video to playlist." });
 
@@ -214,7 +210,7 @@ export const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     const { playlistId, videoId } = req.params;
     // TODO remove video from playlist
     if (!(isValidObjectId(playlistId) && isValidObjectId(videoId)))
-        throw new ErrorHandler(400, "playlistId and VideoId must be vaild mongodb Id");
+        return sendError(res, 400, "playlistId and VideoId must be vaild mongodb Id");
 
     const updatedPlaylist = await playListModel.findByIdAndUpdate(
         playlistId,
@@ -231,18 +227,14 @@ export const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
         }
     )
 
-    if (!updatedPlaylist) throw new ErrorHandler(500, "Unable to delete the video to playlist.");
+    if (!updatedPlaylist) return sendError(res, 500, "Unable to delete the video to playlist.");
 
-    return res.status(201)
-        .json(
-            new APIresponse(
-                200,
-                updatePlaylist,
-                "Video deleted from playlist successfully✅✅"
-            )
-        );
-
-
+    return sendAPIResp(
+        res,
+        200,
+        "Video deleted from playlist successfully✅✅",
+        updatePlaylist
+    );
 },
     { statusCode: 500, message: "Something went wrong while removing requested video to playlist." });
 
@@ -250,20 +242,18 @@ export const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 export const deletePlaylist = asyncHandler(async (req, res) => {
     const { playlistId } = req.params
     // TODO delete playlist
-    if (!isValidObjectId(playlistId)) throw new ErrorHandler(400, " playlistId must be vaild mongodb Id");
+    if (!isValidObjectId(playlistId)) return sendError(res, 400, " playlistId must be vaild mongodb Id");
 
     const deletedPlaylist = await playListModel.findByIdAndDelete(playlistId);
 
-    if (!deletedPlaylist) throw new ErrorHandler(500, "Unable to delete the playlist.");
+    if (!deletedPlaylist) return sendError(res, 500, "Unable to delete the playlist.");
 
-    return res.status(201)
-        .json(
-            new APIresponse(
-                200,
-                deletedPlaylist,
-                "Deleted the playlist successfully✅✅"
-            )
-        );
+    return sendAPIResp(
+        res,
+        200,
+        "Deleted the playlist successfully✅✅",
+        deletedPlaylist
+    );
 },
     { statusCode: 500, message: "Something went wrong while deleting the playlist." });
 
@@ -273,7 +263,7 @@ export const updatePlaylist = asyncHandler(async (req, res) => {
     const { name, description } = req.body
     //TODO update playlist
 
-    if (!isValidObjectId(playlistId)) throw new ErrorHandler(400, " playlistId must be vaild mongodb Id");
+    if (!isValidObjectId(playlistId)) return sendError(res, 400, " playlistId must be vaild mongodb Id");
     const updateFields = {};
     if (name) updateFields.name = name;
     if (description) updateFields.description = description;
@@ -288,14 +278,14 @@ export const updatePlaylist = asyncHandler(async (req, res) => {
         }
     );
 
-    return res.status(201)
-        .json(
-            new APIresponse(
-                200,
-                updatedPlaylist,
-                "updated the playlist successfully✅✅"
-            )
-        );
+    if (!updatedPlaylist) return sendError(res, 404, "Unable to find the playlist.");
+
+    return sendAPIResp(
+        res,
+        200,
+        "updated the playlist successfully✅✅",
+        updatedPlaylist,
+    );
 
 },
     { statusCode: 500, message: "Something went wrong while updating the playlist." });

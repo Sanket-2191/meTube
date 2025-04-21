@@ -5,7 +5,6 @@ import { userModel } from "../models/user.model.js";
 import { APIresponse } from "../utils/APIresponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { ErrorHandler } from "../utils/ErrorHandlers.js";
 import { deleteAssestFromCloudinary } from "../utils/deleteCloudinaryAsset.js";
 import { sendError } from "../utils/sendErrorResp.js";
 import { sendAPIResp } from "../utils/sendApiResp.js";
@@ -38,7 +37,6 @@ const generate_Access_And_Refresh_Token = async (res, userID) => {
 }
 
 // works ✅✅
-
 export const registerUser = asyncHandler(async (req, res) => {
     // get user detail from frontend
     const { fullname, email, username, password } = req.body;
@@ -98,7 +96,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     { statusCode: 500, message: "Something went wrong while registration of the user" }
 );
 
-
 // works ✅✅
 export const loginUser = asyncHandler(async (req, res) => {
     // data from req.body
@@ -119,7 +116,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     }
 
     // check password
-    const isPasswordValid = await user.isPasswordCorrect(password || "");
+    const isPasswordValid = await user.isPasswordCorrect(res, password || "");
     if (!isPasswordValid) {
         return sendError(res, 401, "Invalid password entered!");
     }
@@ -151,7 +148,6 @@ export const loginUser = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while logging-in" }
 );
-
 
 
 // works ✅✅
@@ -273,7 +269,7 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
 
     console.log("1. find the user with req.user._id=", req.user._id);
 
-    if (!(fullName && email)) return sendError(400, "All fields are required");
+    if (!(fullName && email)) return sendError(res, 400, "All fields are required");
 
     console.log("2. find the user with req.user._id=", req.user._id);
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -289,7 +285,7 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
         }
     ).select("-password -refreshToken");
     // console.log("couldn't find the user with req.user._id=", req.user._id);
-    if (!updatedUser) return sendError(404, "User not found");
+    if (!updatedUser) return sendError(res, 404, "User not found");
 
     return sendAPIResp(
         res,
@@ -306,18 +302,17 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
 export const updateUserAvatar = asyncHandler(async (req, res) => {
     // get avatar file objects from req.file not req.files as we are only accepting for one field.
     const avatar = req.file;
-    if (!avatar) return sendError(400, "No file received for avatar update");
+    if (!avatar) return sendError(res, 400, "No file received for avatar update");
 
     // get localFilePath for avatar.
     const avatarLocalFilePath = avatar?.path;
-    if (!avatarLocalFilePath) return sendError(500,
+    if (!avatarLocalFilePath) return sendError(res, 500,
         "Unable to create file locally while avatar update!");
 
     // get URL for avatarFile from cloudinary...
     const cloudinaryOBJ = await uploadOnCloudinary(avatarLocalFilePath);
     const avatarURL = cloudinaryOBJ.url;
-    if (!avatarURL) return sendError(500,
-        "Unable to create cloudinary-url for avatar update!");
+    if (!avatarURL) return sendError(res, 500, "Unable to create cloudinary-url for avatar update!");
 
     // update user with new avatar URL
     const user = await userModel.findByIdAndUpdate(
@@ -334,9 +329,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
 
     // delete old avatar from cloudinary..
     const deleted = await deleteAssestFromCloudinary(req.user.avatar);
-    if (deleted.result !== "ok") {
-        return sendError(500, `Cloudinary avatar delete failed: ${deleted.result}`);
-    }
+    if (deleted.result !== "ok") return sendError(res, 500, `Cloudinary avatar delete failed: ${deleted.result}`)
 
     return sendAPIResp(
         res,
@@ -355,19 +348,18 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     // console.log("coverImage file :", req.file);
 
     const coverImage = req.file;
-    if (!coverImage) return sendError(400, "No file received for coverImage update");
+    if (!coverImage) return sendError(res, 400, "No file received for coverImage update");
 
     // get localFilePath for coverImage.
     const coverImageLocalFilePath = coverImage?.path;
-    if (!coverImageLocalFilePath) return sendError(500,
-        "Unable to create file locally while coverImage update!");
+    if (!coverImageLocalFilePath) return sendError(res, 500, "Unable to create file locally while coverImage update!");
     // console.log("coverImage loc path done");
 
 
     // get URL for coverImageFile from cloudinary...
     const cloudinaryOBJ = await uploadOnCloudinary(coverImageLocalFilePath);
     const coverImageURL = cloudinaryOBJ.url;
-    console.log("coverImage url path done :", cloudinaryOBJ);
+    // console.log("coverImage url path done :", cloudinaryOBJ);
 
     const user = await userModel.findByIdAndUpdate(
         req.user._id,
@@ -382,19 +374,12 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     ).select("-password -refreshToken")
 
     // delete old coverImage from cloudinary..
-    const deleted = await deleteAssestFromCloudinary(req.user.coverImage)
-    if (deleted.result !== "ok") {
-        return sendError(500, `Cloudinary coverImage delete failed: ${deleted.result}`);
-    }
+    const deleted = await deleteAssestFromCloudinary(req.user.coverImage);
 
-    return res.status(200)
-        .json(
-            new APIresponse(200,
-                user,
-                "coverImage update successful✅✅"
-            )
-        )
+    if (deleted.result !== "ok") return sendError(res, 500, `Cloudinary coverImage delete failed`)
 
+
+    return sendAPIResp(res, 200, "coverImage update successful✅✅", user);
 
 },
     { statusCode: 500, message: "coverImage update failed :" })
@@ -407,9 +392,9 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username, userId } = req.params;  // we will 
     console.log("req.params.username :", username);
 
-    if (!username?.trim()) return sendError(400, "No username received for fetching channel profile.");
+    if (!username?.trim()) return sendError(res, 400, "No username received for fetching channel profile.");
 
-    if (userId && !(mongoose.isValidObjectId(userId))) return sendError(400, "userId should be valid for fetching channel profile.");
+    if (userId && !(mongoose.isValidObjectId(userId))) return sendError(res, 400, "userId should be valid for fetching channel profile.");
 
     const channelProfile = await userModel.aggregate(
         [
@@ -474,16 +459,9 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
         ]
     )
 
-    if (!channelProfile?.length) return sendError(404, "channel not found");
+    if (!channelProfile?.length) return sendError(res, 404, "channel not found");
 
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                channelProfile[0],
-                'Channel profile fetched successfully✅✅'
-            )
-        )
+    return sendAPIResp(res, 200, 'Channel profile fetched successfully✅✅', channelProfile?.[0] || {});
 
 },
     { statusCode: 500, message: "Unable to fetch channel profile :" })
@@ -494,12 +472,10 @@ export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
     // console.log("reveived req.params: ", req.params);
 
     const { videoId } = req.params;
-    // console.log("received videoId :", videoId, " is valid Id: ",
-    //     // @ts-ignore
-    //     ((String)(new mongoose.ObjectId(videoId)) === videoId));
+
     //@ts-ignore
     if (((String)(new mongoose.ObjectId(videoId)) !== videoId) || !mongoose.isValidObjectId(videoId)) {
-        return sendError(400, "Invalid videoId");
+        return sendError(res, 400, "Invalid videoId");
     }
 
     const user = await userModel
@@ -516,14 +492,7 @@ export const addVideoToWatchHistory = asyncHandler(async (req, res) => {
             }
         ).select('-password -refreshToken')
 
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                user,
-                "Video added to watchHistory."
-            )
-        )
+    return sendAPIResp(res, 200, "Video added to watchHistory.", user);
 
 },
     { statusCode: 500, message: "Unable to add video to watchHistory :" })
@@ -587,17 +556,9 @@ export const userWatchHistory = asyncHandler(async (req, res) => {
         ]
     )
 
-    if (!user) return sendError(404, "Watch history not found!");
+    if (!user) return sendError(res, 404, "Watch history not found!");
 
 
-    return res.status(200)
-        .json(
-            new APIresponse(
-                200,
-                user?.[0]?.watchHistoryObjects
-                ,
-                "watchHistory fetched successfully✅✅"
-            )
-        )
+    return sendAPIResp(res, 200, "watchHistory fetched successfully✅✅", user?.[0]?.watchHistoryObjects)
 },
     { statusCode: 500, message: "Unable to fetch the watchHistory :" });

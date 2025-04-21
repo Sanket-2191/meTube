@@ -1,6 +1,7 @@
 import cloudinary from 'cloudinary';
 import { extractPublicId } from 'cloudinary-build-url';
 import { ErrorHandler } from './ErrorHandlers.js';
+import { sendError } from './sendErrorResp.js';
 
 
 console.log("CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
@@ -14,9 +15,9 @@ cloudinary.v2.config({
     secure: true
 });
 
-export const deleteAssestFromCloudinary = async (url) => {
+export const deleteAssestFromCloudinary = async (res, url) => {
     try {
-        if (!url) throw new ErrorHandler(400, "URL needed to delete the asset from Cloudinary");
+        if (!url) return sendError(res, 400, "URL needed to delete the asset from Cloudinary");
 
         const publicId = extractPublicId(url); // Extracts public ID
         // console.log("URL:", url);
@@ -32,7 +33,7 @@ export const deleteAssestFromCloudinary = async (url) => {
 
     } catch (err) {
         // console.error("Error deleting asset:", err);
-        throw new ErrorHandler(500, "Unable to delete the asset from Cloudinary >> " + err.message || "");
+        return sendError(res, 500, "Unable to delete the asset from Cloudinary >> " + err.message || "");
     }
 };
 

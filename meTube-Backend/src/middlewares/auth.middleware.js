@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ErrorHandler } from "../utils/ErrorHandlers.js";
 import { userModel } from "../models/user.model.js";
 import { APIresponse } from "../utils/APIresponse.js";
+import { sendError } from "../utils/sendErrorResp.js";
 
 /// IS used every where user needs to be loggedin to be able to access the api.
 export const verifyJWT = asyncHandler(async (req, res, next) => {
@@ -13,23 +14,22 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
     if (!token) {
         console.log("No token found. Attempting to refresh...");
-        return res.status(401)
-            .json(
-                new APIresponse(
-                    401,
-                    {},
-                    "No accessToken found! please try renewing accessToken or logging-in again.")
-            )
+        return sendError(
+            res,
+            401,
+            "No accessToken found! please try renewing accessToken or logging-in again."
+        )
+
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     // @ts-ignore
-    if (!decodedToken._id) throw new ErrorHandler(401, "Invalid token!")
+    if (!decodedToken._id) return sendError(res, 401, "Invalid token!")
     // t
     // @ts-ignore
     const user = await userModel.findById(decodedToken._id).select("-password -refreshToken");
 
-    if (!user) throw new ErrorHandler(404, "User not found!");
+    if (!user) return sendError(res, 404, "User not found!");
 
     req.user = user; // Attaching user to request
     next(); // Proceeding to next middleware
