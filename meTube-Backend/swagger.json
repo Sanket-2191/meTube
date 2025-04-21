@@ -7,8 +7,8 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
-            "description": "Local server not in production yet."
+            "url": "https://metube-88dp.onrender.com/",
+            "description": "Sever is Live."
         }
     ],
     "components": {
@@ -17,109 +17,6 @@
                 "in": "header",
                 "name": "Authorization",
                 "type": "apiKey"
-            }
-        },
-        "schemas": {
-            "RegisterUserRequest": {
-                "type": "object",
-                "properties": {
-                    "email": {
-                        "type": "string"
-                    },
-                    "username": {
-                        "type": "string"
-                    },
-                    "fullname": {
-                        "type": "string"
-                    },
-                    "coverimage": {
-                        "type": "string",
-                        "format": "binary"
-                    },
-                    "avatar": {
-                        "type": "string",
-                        "format": "binary"
-                    },
-                    "password": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "email",
-                    "username",
-                    "fullname",
-                    "password",
-                    "avatar"
-                ]
-            },
-            "LoginRequest": {
-                "type": "object",
-                "properties": {
-                    "email": {
-                        "type": "string"
-                    },
-                    "password": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "email",
-                    "password"
-                ]
-            },
-            "ChangePasswordReq": {
-                "type": "object",
-                "properties": {
-                    "oldPassword": {
-                        "type": "string"
-                    },
-                    "newPassword": {
-                        "type": "string"
-                    }
-                },
-                "newPassword": [
-                    "oldPassword",
-                    "password"
-                ]
-            },
-            "ChangeEmailFullname": {
-                "type": "object",
-                "properties": {
-                    "fullName": {
-                        "type": "string"
-                    },
-                    "email": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "fullName",
-                    "email"
-                ]
-            },
-            "ChangeAvatar": {
-                "type": "object",
-                "properties": {
-                    "avatar": {
-                        "type": "string",
-                        "format": "binary"
-                    }
-                },
-                "required": [
-                    "avatar"
-                ]
-            },
-            "ChangeCoverImage": {
-                "type": "object",
-                "properties": {
-                    "coverImage": {
-                        "type": "string",
-                        "format": "binary"
-                    }
-                },
-                "required": [
-                    "coverImage"
-                ]
             }
         }
     },
@@ -135,7 +32,36 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/RegisterUserRequest"
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "fullname": {
+                                        "type": "string"
+                                    },
+                                    "coverimage": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "avatar": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "username",
+                                    "fullname",
+                                    "password",
+                                    "avatar"
+                                ]
                             },
                             "encoding": {
                                 "coverImage": {
@@ -179,7 +105,19 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/LoginRequest"
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "password"
+                                ]
                             }
                         }
                     }
@@ -212,14 +150,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Channel details retrieved successfully.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ChannelDetails"
-                                }
-                            }
-                        }
+                        "description": "Channel details retrieved successfully."
                     },
                     "404": {
                         "description": "User not found."
@@ -298,7 +229,19 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/ChangePasswordReq"
+                                "type": "object",
+                                "properties": {
+                                    "oldPassword": {
+                                        "type": "string"
+                                    },
+                                    "newPassword": {
+                                        "type": "string"
+                                    }
+                                },
+                                "newPassword": [
+                                    "oldPassword",
+                                    "password"
+                                ]
                             }
                         }
                     }
@@ -321,7 +264,19 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/ChangeEmailFullname"
+                                "type": "object",
+                                "properties": {
+                                    "fullName": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "fullName",
+                                    "email"
+                                ]
                             }
                         }
                     }
@@ -348,7 +303,16 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/ChangeAvatar"
+                                "type": "object",
+                                "properties": {
+                                    "avatar": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "required": [
+                                    "avatar"
+                                ]
                             },
                             "encoding": {
                                 "avatar": {
@@ -376,7 +340,16 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/ChangeCoverImage"
+                                "type": "object",
+                                "properties": {
+                                    "coverImage": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "required": [
+                                    "coverImage"
+                                ]
                             },
                             "encoding": {
                                 "coverImage": {

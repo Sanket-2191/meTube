@@ -12,7 +12,7 @@ export const toggleSubscription = asyncHandler(async (req, res) => {
     const subscriptionFind = await subscriptionModel.findOne(
         {
             $and: [
-                { channel: channelId }, { subscrider: req.user._id }
+                { channel: channelId }, { subscriber: req.user._id }
             ]
         }
     )
@@ -34,7 +34,7 @@ export const toggleSubscription = asyncHandler(async (req, res) => {
         subscriber: req.user._id
     })
 
-    if (!subscription) throw new ErrorHandler(500, "Unable to save subscrition.");
+    if (!subscription) throw new ErrorHandler(500, "Unable to save subsbcription.");
 
     return res.status(201)
         .json(
@@ -45,14 +45,67 @@ export const toggleSubscription = asyncHandler(async (req, res) => {
             )
         )
 
-
-})
+},
+    { statusCode: 500, message: "Failed to create/delete subscription." })
 
 // controller to return subscriber list of a channel
-const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+export const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
 
-})
+    if (!mongoose.isValidObjectId(channelId)) throw new ErrorHandler('Please provide vaid channelId');
+
+    const subscriberList = await subscriptionModel.aggregate(
+        [
+            {
+                $match: { channelId }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'subscriber',
+                    foreignField: '_id',
+                    as: 'subscribers',
+                    pipeline: [
+                        {
+                            $project: {
+                                username: 1,
+                                fullName: 1,
+                                email: 1,
+                                avatar: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    totalSubscribers: { $size: "$subscribers" }
+                }
+            },
+            {
+                $project: {
+                    channelId: 1,
+                    subscribers: 1,
+                    totalSubscribers: 1
+                }
+            }
+
+        ]
+
+
+    )
+
+    return res.status(200)
+        .json(
+            new APIresponse(
+                200,
+                subscriberList,
+                subscriberList.length ? "Fetched all subscribers" : "No subcribers on account."
+            )
+        )
+
+},
+    { statusCode: 500, message: "Failed to fetch all subscribers." })
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
