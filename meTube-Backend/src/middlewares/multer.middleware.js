@@ -4,7 +4,7 @@ import { ErrorHandler } from "../utils/ErrorHandlers.js";
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // console.log("Files received in multer midware:?", req.files || "files not received");
-        cb(null, 'public/temp/my-uploads')
+        cb(null, 'public/')
         /*
            since our project is run as 'node src/server.js' so the root dir will be considered to be
            the dir in which src/server.js is present and all relative path provided in any utility func

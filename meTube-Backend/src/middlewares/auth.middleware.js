@@ -1,9 +1,7 @@
 import jwt from "jsonwebtoken";
 
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ErrorHandler } from "../utils/ErrorHandlers.js";
 import { userModel } from "../models/user.model.js";
-import { APIresponse } from "../utils/APIresponse.js";
 import { sendError } from "../utils/sendErrorResp.js";
 
 /// IS used every where user needs to be loggedin to be able to access the api.
