@@ -78,23 +78,26 @@ export const publishAVideo = asyncHandler(async (req, res) => {
     if (!title) return sendError(res, 400, "Title is required for video.");
     if (!description) return sendError(res, 400, "Description is required for video.");
 
-    const { videolocalPath, thumbnailLocalPath } = req.files;
-    if (!videolocalPath) return sendError(res, 400, "Video is required for video Uploading 😒.");
+    // console.log("Files for video upload: ", req.files);
+
+    const { video, thumbnail } = req.files;
+    const videoPathLoc = video?.[0]?.path, thumbnailPathLoc = thumbnail?.[0]?.path;
+    if (!videoPathLoc) return sendError(res, 400, "Video is required for video Uploading 😒.");
 
     // upload video on cloudinary...
-    const videoCloudinary = await uploadOnCloudinary(videolocalPath);
+    const videoCloudinary = await uploadOnCloudinary(videoPathLoc);
     if (!videoCloudinary) return sendError(res, 500, "unable to upload Video on cloud ");
     if (!videoCloudinary.url) return sendError(res, 500, "unable to generate url for Video on cloud ");
     const videoURL = videoCloudinary.url;
     const videoDuration = videoCloudinary.duration || 0;
 
     // upload video on cloudinary...
-    const thumbnailCloudinary = await uploadOnCloudinary(thumbnailLocalPath);
+    const thumbnailCloudinary = await uploadOnCloudinary(thumbnailPathLoc);
     if (!thumbnailCloudinary) return sendError(res, 500, "unable to upload thumbnail on cloud ");
     if (!thumbnailCloudinary.url) return sendError(res, 500, "unable to generate url for thumbnail on cloud ");
     const thumbnailURL = thumbnailCloudinary.url;
 
-    const video = await videoModel.create({
+    const newVideo = await videoModel.create({
         owner,
         videoFile: videoURL,
         thumbnail: thumbnailURL,
@@ -102,13 +105,13 @@ export const publishAVideo = asyncHandler(async (req, res) => {
         description,
         duration: videoDuration
     });
-    if (!video) return sendError(res, 500, "new video creation unsuccessful");
+    if (!newVideo) return sendError(res, 500, "new video creation unsuccessful");
 
     return sendAPIResp(
         res,
         201,
         "Video uploaded successfully✅✅",
-        video
+        newVideo
     )
 
 },
@@ -205,7 +208,7 @@ export const deleteVideo = asyncHandler(async (req, res) => {
     if (!(video.owner.equals(req.user._id))) return sendError(res, 402, "Cannot delete videos of other users. deleting video..")
 
     const deletedVideo = await video.deleteOne();
-    console.log("deleted video: ", deletedVideo);
+    // console.log("deleted video: ", deletedVideo);
 
     // To ensure properly fetching liked videos we must deleted liked-docs with deleted videoId
     const deletedLikes = await likeModel.deleteMany({
@@ -213,7 +216,7 @@ export const deleteVideo = asyncHandler(async (req, res) => {
     });
     const deleteComments = await commentModel.deleteMany({ video: videoId })
 
-    console.log(`Deleted ${deletedLikes.deletedCount} likes and ${deleteComments.deletedCount} comments for deleted video..`);
+    // console.log(`Deleted ${deletedLikes.deletedCount} likes and ${deleteComments.deletedCount} comments for deleted video..`);
 
     return sendAPIResp(
         res,

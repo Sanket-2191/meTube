@@ -16,8 +16,10 @@ const storage = multer.diskStorage({
         */
     },
     filename: function (req, file, cb) {
+        // console.log(file.mimetype.split("/"));
+
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        cb(null, file.fieldname + '-' + uniqueSuffix)
+        cb(null, file.fieldname + '-' + uniqueSuffix + "." + (file.mimetype).toString().split("/")[1])
     }
 })
 
@@ -25,7 +27,7 @@ const upload = multer(
     {
         storage: storage,
         fileFilter: function (req, file, cb) {
-            if (file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "video/mp4") {
+            if (file.mimetype === "image/jpeg" || file.mimetype === "image/webp" || file.mimetype === "image/png" || file.mimetype === "video/mp4") {
                 cb(null, true)
             } else {
                 // @ts-ignore
